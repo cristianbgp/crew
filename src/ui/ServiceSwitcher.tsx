@@ -5,6 +5,7 @@ import type { CrewConfig } from "../config/types";
 import type { ServiceSnapshot } from "../process/types";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { inputTheme } from "./inputTheme";
 export interface PaletteItem {
   id: string;
   label: string;
@@ -116,7 +117,7 @@ export function ServiceSwitcher({
             setQuery(value);
             setIndex(0);
           }}
-          backgroundColor={c.panel}
+          {...inputTheme(c)}
         />
         <scrollbox ref={list} flexGrow={1} minHeight={1}>
           {matches.length ? (

@@ -10,6 +10,7 @@ import type { ProcessManager } from "../process/manager";
 import { Button } from "./Button";
 import { moveFocus } from "./focus";
 import { useTheme } from "./theme";
+import { inputTheme } from "./inputTheme";
 export function LogInspector({
   id,
   manager,
@@ -142,7 +143,7 @@ export function LogInspector({
           value={query}
           placeholder="Filter captured output…"
           onInput={setQuery}
-          backgroundColor={c.panel}
+          {...inputTheme(c)}
         />
         <scrollbox
           ref={list}

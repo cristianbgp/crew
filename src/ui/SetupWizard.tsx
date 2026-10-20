@@ -11,6 +11,7 @@ import type { CrewConfig, ServiceDefinition } from "../config/types";
 import { ServiceEditor } from "./ServiceEditor";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { inputTheme } from "./inputTheme";
 export function SetupWizard({
   baseDir,
   onFinish,
@@ -130,7 +131,7 @@ export function SetupWizard({
             if (error) setError("");
           }}
           focused={focus === "workspace-name"}
-          backgroundColor={c.panel}
+          {...inputTheme(c)}
         />
         <box height={1} flexShrink={0} />
         {!compact || services.length > 0 ? (

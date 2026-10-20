@@ -13,6 +13,7 @@ import type { ServiceDefinition } from "../config/types";
 import { discoverScripts } from "../setup/discover";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { inputTheme } from "./inputTheme";
 export interface ServiceEditorProps {
   baseDir: string;
   initial?: ServiceDefinition;
@@ -208,9 +209,7 @@ export function ServiceEditor({
                 width="100%"
                 value={values[i]}
                 focused={focus === `field-${i}`}
-                backgroundColor={c.panel}
-                textColor={c.text}
-                focusedBackgroundColor={c.line}
+                {...inputTheme(c)}
                 onMouseDown={() => setFocus(`field-${i}`)}
                 onInput={(v) => {
                   if (!(initial && i === 0)) change(i, v);

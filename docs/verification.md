@@ -55,9 +55,9 @@ bun pm pack --dry-run
 
 A dependency audit checks known registry advisories, not every possible vulnerability. Packing inspects what would ship; it does not prove that an installed package works. Verify the actual tarball from a separate consumer directory before publishing. See [Distribution](distribution.md) for that release checklist.
 
-## Published preview — 2026-10-20
+## Initial published preview — 2026-10-20
 
-`@cristianbgp/crew@0.1.1` is publicly available on npm and tagged `latest`. Its registry shasum, `1d66aebd1f3b7606deef5733ea262f9ea64f9769`, matches the reviewed source artifact. The release tarball SHA-256 is `02b17683e61442d5013d3db3c804af15e69e5dfdbf2632e064950f8987a69397`.
+`@cristianbgp/crew@0.1.1` was the initial public npm preview. Its registry shasum, `1d66aebd1f3b7606deef5733ea262f9ea64f9769`, matches the reviewed source artifact. The release tarball SHA-256 is `02b17683e61442d5013d3db3c804af15e69e5dfdbf2632e064950f8987a69397`.
 
 The scoped package and frozen lockfile are synchronized. The release check passed 96 tests / 451 assertions, all 16 real CLI/PTY checks, and six production tarball-install checks. A fresh production installation by name and version from the public npm registry then passed six more checks:
 

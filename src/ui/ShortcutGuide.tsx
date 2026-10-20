@@ -3,6 +3,7 @@ import type { ScrollBoxRenderable } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { inputTheme } from "./inputTheme";
 
 // Scope describes where crew handles the key; ordinary terminal input stays
 // with the service. Keep alternatives separate so long chords remain readable.
@@ -147,7 +148,7 @@ export function ShortcutGuide({
           onInput={onQueryChange}
           keyBindings={[{ name: "a", ctrl: true, action: "select-all" }]}
           placeholder="Search action, key or scope…"
-          backgroundColor={c.panel}
+          {...inputTheme(c)}
         />
         {height >= 18 ? (
           <text fg={c.muted} flexShrink={0}>

@@ -16,7 +16,7 @@ crew demo
 
 ## npm package, with Bun installed
 
-The package is `@cristianbgp/crew`, and its executable remains `crew`. The initial preview is `0.1.1`.
+The package is `@cristianbgp/crew`, and its executable remains `crew`. The current preview version is `0.1.2`.
 
 ```sh
 bun install -g @cristianbgp/crew
@@ -32,7 +32,7 @@ bunx --package @cristianbgp/crew crew
 Pin the package version when repeatability matters:
 
 ```sh
-bunx --package @cristianbgp/crew@0.1.1 crew
+bunx --package @cristianbgp/crew@0.1.2 crew
 ```
 
 Bun is a runtime requirement, not just the package manager: crew uses Bun PTYs, IPC, and FFI. Node.js alone cannot run this application. The manifest declares `engines.bun`.
@@ -46,7 +46,7 @@ The unscoped name `crew` has historical unpublished versions. An authenticated r
 ### Release checks
 
 1. Confirm the authenticated npm account and the intended package/version.
-2. Keep `package.json`, `bun.lock`, and the CLI's `--version` in sync. The current CLI returns `0.1.1` directly; release versioning is manual.
+2. Keep `package.json`, `bun.lock`, and the CLI's `--version` in sync. The current CLI returns `0.1.2` directly; release versioning is manual.
 3. Run `bun run check`, `bun run test:terminal`, and `bun audit`.
 4. Inspect `bun pm pack --dry-run` and the actual tarball. Exclude credentials, private handoff notes, generated evidence, and test suites; retain required runtime and demo files.
 5. Install that tarball with production dependencies into a disposable project. Verify help/version, interactive input, the bundled demo, and child cleanup from an unrelated working directory.
@@ -56,10 +56,12 @@ The unscoped name `crew` has historical unpublished versions. An authenticated r
 For a reviewed local tarball, use an absolute or `./`-prefixed path so npm does not interpret it as GitHub shorthand:
 
 ```sh
-npm publish ./work/cristianbgp-crew-0.1.1.tgz --access public --registry=https://registry.npmjs.org/
+npm publish ./work/cristianbgp-crew-0.1.2.tgz --access public --registry=https://registry.npmjs.org/
 ```
 
-`@cristianbgp/crew@0.1.1` is available on npm with the `latest` tag. Its registry shasum matches the reviewed artifact, and a clean production installation from npm passed all six installed-package checks. The read-only macOS CI workflow checks source changes; it does not publish packages automatically.
+Version `0.1.2` fixes text visibility in light mode across setup, service forms, commands, service switching, log search, and the shortcut guide. Focused fields and selections also update when the terminal theme changes.
+
+The read-only macOS CI workflow checks source changes; it does not publish packages automatically.
 
 ## Later: standalone binaries and Homebrew
 

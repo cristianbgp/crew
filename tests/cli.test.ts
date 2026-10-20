@@ -15,7 +15,7 @@ async function run(args: string[]) {
 }
 test("help and version work without a TTY, invalid args exit nonzero", async () => {
   expect((await run(["--help"])).out).toContain("crew dev");
-  expect((await run(["--version"])).out).toContain("0.1.1");
+  expect((await run(["--version"])).out).toContain("0.1.2");
   expect((await run(["unknown"])).code).toBe(1);
 });
 test("dev without a TTY exits instead of waiting for input", async () => {

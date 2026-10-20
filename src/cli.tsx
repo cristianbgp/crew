@@ -17,7 +17,7 @@ async function main() {
     return;
   }
   if (command === "--version") {
-    console.log("0.1.1");
+    console.log("0.1.2");
     return;
   }
   if (!["dev", "demo"].includes(command))
