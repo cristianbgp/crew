@@ -1,0 +1,28 @@
+# Dependencies, local evidence and assistant state
+node_modules/
+work/
+.superpowers/
+docs/superpowers/
+
+# Environment files and local registry credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.template
+.npmrc
+
+# Local workspace; reusable demo config stays in examples/
+/crew.toml
+*.toml.lock
+*.toml.*.tmp
+
+# Generated artifacts
+dist/
+coverage/
+*.tsbuildinfo
+*.tgz
+*.log
+
+# macOS
+.DS_Store

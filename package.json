@@ -1,0 +1,76 @@
+{
+  "name": "@cristianbgp/crew",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "Your services, one workspace.",
+  "bin": {
+    "crew": "./src/cli.tsx"
+  },
+  "scripts": {
+    "dev": "bun src/cli.tsx dev",
+    "demo": "bun src/cli.tsx demo",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun test",
+    "test:terminal": "bun tests/terminal-smoke.ts",
+    "format": "oxfmt --write .",
+    "lint": "oxlint --deny-warnings src tests",
+    "lint:fix": "oxlint --fix --deny-warnings src tests",
+    "format:check": "oxfmt --check .",
+    "test:soak": "bun tests/soak.tsx",
+    "install:local": "bun link"
+  },
+  "dependencies": {
+    "@opentui/core": "^0.6.6",
+    "@opentui/react": "^0.6.6",
+    "react": "^19.3.1",
+    "toml-eslint-parser": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "@types/react": "^19.3.0",
+    "@xterm/headless": "^6.0.0",
+    "oxfmt": "^0.73.0",
+    "oxlint": "^1.88.0",
+    "typescript": "^7.0.2"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cristianbgp/crew.git"
+  },
+  "homepage": "https://github.com/cristianbgp/crew#readme",
+  "bugs": {
+    "url": "https://github.com/cristianbgp/crew/issues"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "keywords": [
+    "cli",
+    "tui",
+    "development",
+    "monorepo",
+    "process-manager"
+  ],
+  "files": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "tsconfig.json",
+    "examples/crew.toml",
+    "tests/fixtures/server.ts",
+    "tests/fixtures/interactive.ts",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "docs/configuration.md",
+    "docs/distribution.md",
+    "docs/verification.md",
+    "docs/images/screenshot.png"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

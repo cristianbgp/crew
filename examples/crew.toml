@@ -1,0 +1,24 @@
+# crew demo. No other repository is changed.
+name = "Playground"
+
+[services.web]
+repo = "playground"
+cwd = ".."
+command = "bun tests/fixtures/server.ts web"
+
+[services.api]
+repo = "playground"
+cwd = ".."
+command = "bun tests/fixtures/server.ts api"
+
+[services.worker]
+repo = "background"
+cwd = ".."
+command = "bun tests/fixtures/interactive.ts"
+autostart = false
+
+[services.failure]
+repo = "background"
+cwd = ".."
+command = "printf 'This demo exits with code 1. The other services keep running.\\n'; exit 1"
+autostart = false
