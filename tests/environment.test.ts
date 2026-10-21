@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { Terminal } from "@xterm/headless";
 import { existsSync } from "node:fs";
 import {
   mkdir,
@@ -23,6 +24,11 @@ for (const launch of launches) {
       const a = join(root, "repo-a"),
         b = join(root, "repo-b");
       let child: Bun.Subprocess | undefined;
+      const screen = new Terminal({
+        cols: 100,
+        rows: 30,
+        allowProposedApi: true,
+      });
       const pids: number[] = [];
       try {
         await mkdir(a);
@@ -99,7 +105,17 @@ setInterval(() => {}, 60000);
             : launch === "bunx"
               ? [process.execPath, "x", "--no-install", "crew-env-fixture"]
               : [process.execPath, "--no-env-file", cli],
-          { cwd: a, env, terminal: { cols: 100, rows: 30, data() {} } },
+          {
+            cwd: a,
+            env,
+            terminal: {
+              cols: 100,
+              rows: 30,
+              data(_terminal, bytes) {
+                screen.write(bytes);
+              },
+            },
+          },
         );
         await waitFor(() => reports.every((path) => existsSync(path)), 8000);
         const [first, second, plain] = await Promise.all(
@@ -127,6 +143,19 @@ setInterval(() => {}, 60000);
         expect(plain.order).toBeNull();
         for (const report of [first, second, plain])
           expect(report.exported).toBe("from-shell");
+        // Services can report before React commits keyboard handlers. Wait for
+        // the rendered quit control, rather than sending a key during startup.
+        await waitFor(
+          () =>
+            Array.from(
+              { length: screen.rows },
+              (_, y) =>
+                screen.buffer.active
+                  .getLine(y + screen.buffer.active.baseY)
+                  ?.translateToString(true) ?? "",
+            ).some((line) => line.includes("Ctrl+Q")),
+          8000,
+        );
         child.terminal!.write("\x11");
         await waitFor(() => child!.exitCode !== null, 8000);
         expect(child.exitCode).toBe(0);
@@ -137,6 +166,7 @@ setInterval(() => {}, 60000);
           await child.exited;
         }
         child?.terminal?.close();
+        screen.dispose();
         await rm(root, { recursive: true, force: true });
       }
     }, 20000);
