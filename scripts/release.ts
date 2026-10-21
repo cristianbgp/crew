@@ -197,10 +197,11 @@ export async function publishRelease(plan: ReleasePlan, adapter: Adapter) {
   }
 }
 
-async function npm(args: string[], inherit = false) {
+export async function runNpm(args: string[], inherit = false) {
   const child = Bun.spawn(
     ["npm", ...args, "--registry=https://registry.npmjs.org/"],
     {
+      stdin: inherit ? "inherit" : "ignore",
       stdout: inherit ? "inherit" : "pipe",
       stderr: inherit ? "inherit" : "pipe",
     },
@@ -243,7 +244,7 @@ async function main() {
   if (mode !== "--publish") return;
   await publishRelease(plan, {
     inspect: async (pkg) => {
-      const result = await npm([
+      const result = await runNpm([
         "view",
         `${pkg.name}@${pkg.version}`,
         "dist.integrity",
@@ -254,7 +255,7 @@ async function main() {
       throw new Error(`npm lookup failed: ${result.stderr}`);
     },
     publish: async (pkg) => {
-      const result = await npm(
+      const result = await runNpm(
         [
           "publish",
           pkg.path,

@@ -19,6 +19,35 @@ import {
   type ReleasePackage,
 } from "./release";
 
+test("npm publication retains an interactive terminal for browser authorization", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "crew npm tty "));
+  let child: Bun.Subprocess | undefined;
+  try {
+    await writeFile(
+      join(directory, "npm"),
+      "#!/bin/sh\nif [ ! -t 0 ] || [ ! -t 1 ]; then exit 42; fi\n",
+      { mode: 0o755 },
+    );
+    const module = new URL("./release.ts", import.meta.url).href;
+    child = Bun.spawn(
+      [
+        process.execPath,
+        "--no-env-file",
+        "-e",
+        `const {runNpm}=await import(${JSON.stringify(module)});process.exit((await runNpm(["--version"],true)).code);`,
+      ],
+      {
+        env: { ...process.env, PATH: directory },
+        terminal: { cols: 80, rows: 24, data() {} },
+      },
+    );
+    expect(await child.exited).toBe(0);
+  } finally {
+    child?.terminal?.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 const digest = (data: Uint8Array | string) =>
   createHash("sha256").update(data).digest("hex");
 async function fixture() {
