@@ -60,9 +60,7 @@ test("editing command isolates form input and paste; save defers changes until r
       "CHANGED",
     );
     await clickText("Save service");
-    await act(async () => {
-      await waitFor(() => !t.renderer.root.findDescendantById("service-save"));
-    });
+    await waitFor(() => !t.renderer.root.findDescendantById("service-save"));
     expect((await loadConfig(document.path))!.config.services[0]!.command).toBe(
       "printf CHANGED; sleep 30",
     );
