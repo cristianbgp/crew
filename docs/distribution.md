@@ -2,7 +2,7 @@
 
 crew opens a terminal workspace with `crew` or `crew dev`. It needs no activation or background daemon. Package name: `@cristianbgp/crew`; command: `crew`.
 
-This branch prepares **0.2.0**. The published **0.1.3 requires Bun**. The installation instructions below describe 0.2.0 once published. Preparing artifacts does not publish packages or create a GitHub Release.
+These instructions describe **0.2.0**. Earlier **0.1.x versions require Bun**. Installation requires a published 0.2.0 release. Preparing artifacts does not publish packages or create a GitHub Release.
 
 ## npm installation
 

@@ -15,7 +15,7 @@ Run your frontend, API, workers, and other development services in one terminal 
 
 ## Install and try
 
-Early preview. This branch prepares **0.2.0**, with self-contained executables for macOS and Linux (glibc), on ARM64 and x64. The currently published **0.1.3 still requires Bun**; the commands below apply after 0.2.0 is published.
+Early preview. These instructions describe **0.2.0**, with self-contained executables for macOS and Linux (glibc), on ARM64 and x64. **0.1.x requires Bun**. The commands below require a published 0.2.0 release; a source checkout or CI artifact does not itself publish a package.
 
 Install the preview globally, then try the bundled demo:
 
@@ -117,7 +117,7 @@ crew is an early local-development tool. It has interactive terminals, startup d
 
 Commands in a workspace run with your user permissions and inherited environment. Review a shared `crew.toml` before launching it. Closing crew allows five seconds for graceful shutdown before forcing remaining owned processes to exit. Deliberately detached processes and forcibly killing crew itself can prevent normal cleanup.
 
-The 0.2.0 candidate provides standalone executables and an npm launcher requiring Node.js 22+. The published 0.1.3 preview requires Bun. Homebrew remains future work. See [Distribution](docs/distribution.md).
+Version 0.2.0 provides standalone executables and an npm launcher requiring Node.js 22+. Earlier 0.1.x previews require Bun. Homebrew remains future work. See [Distribution](docs/distribution.md).
 
 ## Contribute
 
