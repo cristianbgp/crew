@@ -45,12 +45,22 @@ async function main() {
     throw new Error(
       "crew needs an interactive terminal. Run crew dev in your terminal.",
     );
-  const demo =
-    command === "demo"
-      ? await (await import("./demo/workspace")).createDemoWorkspace()
-      : null;
-  if (demo) path = demo.path;
+  let demo: Awaited<
+    ReturnType<typeof import("./demo/workspace").createDemoWorkspace>
+  > | null = null;
+  let stopping = false;
+  let requestQuit: (() => void) | undefined;
+  const signal = () => {
+    stopping = true;
+    requestQuit?.();
+  };
+  const signals = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+  for (const name of signals) process.on(name, signal);
   try {
+    if (command === "demo")
+      demo = await (await import("./demo/workspace")).createDemoWorkspace();
+    if (demo) path = demo.path;
+    if (stopping) return;
     // Keep help/noninteractive commands fast and avoid initializing native terminal code.
     const [
       { createCliRenderer },
@@ -65,8 +75,10 @@ async function main() {
       import("./process/manager"),
       import("./ui/CrewRoot"),
     ]);
+    if (stopping) return;
     const document = await loadConfig(path);
     const preferences = await loadWorkspaceState(path);
+    if (stopping) return;
     let latestPreferences: WorkspaceState | undefined;
     let preferenceTimer: ReturnType<typeof setTimeout> | undefined;
     let preferenceWrite = Promise.resolve();
@@ -101,8 +113,12 @@ async function main() {
       backgroundColor: "#111318",
     }).catch((error) => {
       process.stdout.write("\x1b[23;0t");
+      // OpenTUI can reject initialization when its own signal handler closes
+      // the native terminal transition. A requested shutdown is successful.
+      if (stopping) return null;
       throw error;
     });
+    if (!renderer) return;
     process.title = "crew";
     const updateTitle = (name: string | null) =>
       renderer.setTerminalTitle(workspaceTitle(name));
@@ -111,10 +127,13 @@ async function main() {
       if (closing) return;
       closing = manager.shutdown().finally(() => renderer.destroy());
     };
-    const signal = () => quit();
-    process.on("SIGINT", signal);
-    process.on("SIGTERM", signal);
+    requestQuit = quit;
     try {
+      if (stopping) {
+        quit();
+        await renderer.closed;
+        return;
+      }
       createRoot(renderer).render(
         <CrewRoot
           onWorkspaceNameChange={updateTitle}
@@ -140,11 +159,14 @@ async function main() {
       renderer.destroy();
       await renderer.closed;
       process.stdout.write("\x1b[23;0t");
-      process.off("SIGINT", signal);
-      process.off("SIGTERM", signal);
+      requestQuit = undefined;
     }
   } finally {
-    await demo?.dispose();
+    try {
+      await demo?.dispose();
+    } finally {
+      for (const name of signals) process.off(name, signal);
+    }
   }
 }
 await main().catch((e) => {

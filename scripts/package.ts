@@ -38,15 +38,24 @@ export async function stagePackages(
     const digest = createHash("sha256")
       .update(await readFile(binary))
       .digest("hex");
+    const noticesPath = join(
+      inputDirectory,
+      target.id,
+      "JS-THIRD-PARTY-NOTICES.md",
+    );
+    const noticesHash = createHash("sha256")
+      .update(await readFile(noticesPath))
+      .digest("hex");
     if (
       record.platform !== target.id ||
       record.version !== manifest.version ||
+      record.noticesSha256 !== noticesHash ||
       record.sha256 !== digest
     )
       throw new Error(
         `Build metadata/version/checksum mismatch for ${target.id}`,
       );
-    builds.push({ target, binary, sha256: digest });
+    builds.push({ target, binary, noticesPath, sha256: digest });
   }
   await rm(outputDirectory, { recursive: true, force: true });
   const root = join(outputDirectory, "root");
@@ -90,7 +99,7 @@ export async function stagePackages(
     await copyFile(join(source, file), destination);
   }
   await chmod(join(root, "bin/crew.cjs"), 0o755);
-  for (const { target, binary } of builds) {
+  for (const { target, binary, noticesPath } of builds) {
     const directory = join(outputDirectory, target.id);
     await mkdir(join(directory, "bin"), { recursive: true });
     await copyFile(binary, join(directory, "bin/crew"));
@@ -101,6 +110,7 @@ export async function stagePackages(
     );
     const notices = join(directory, "licenses");
     await mkdir(notices);
+    await copyFile(noticesPath, join(notices, "JS-THIRD-PARTY-NOTICES.md"));
     await copyFile(
       join(source, "licenses/BUN-LICENSE.md"),
       join(notices, "BUN-LICENSE.md"),

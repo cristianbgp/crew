@@ -81,6 +81,68 @@ try {
     CREW_STANDALONE_SENTINEL: undefined,
     XDG_STATE_HOME: join(directory, "state"),
   };
+  for (const phase of ["workspace", "renderer"] as const) {
+    for (const signal of ["SIGINT", "SIGTERM"] as const) {
+      let startupOutput = "";
+      let signaled = false;
+      child = Bun.spawn([binary, "demo"], {
+        cwd: directory,
+        env: { ...env, TMPDIR: directory },
+        terminal: {
+          cols: 100,
+          rows: 30,
+          data(_terminal, bytes) {
+            startupOutput += new TextDecoder().decode(bytes);
+            if (
+              phase === "renderer" &&
+              !signaled &&
+              startupOutput.includes("\x1b[22;0t")
+            ) {
+              signaled = true;
+              child!.kill(signal);
+            }
+          },
+        },
+      });
+      const deadline = Date.now() + 10000;
+      let created = false;
+      while (Date.now() < deadline && child.exitCode === null) {
+        if (
+          (await readdir(directory)).some((name) =>
+            name.startsWith("crew demo "),
+          )
+        ) {
+          created = true;
+          break;
+        }
+        await Bun.sleep(1);
+      }
+      if (!created)
+        throw new Error("Early demo interruption never acquired a workspace");
+      if (phase === "workspace") {
+        signaled = true;
+        child.kill(signal);
+      }
+      await until(
+        () => child!.exitCode !== null || Boolean(child!.signalCode),
+        `Early demo ${signal} (${phase})`,
+      );
+      if (!signaled)
+        throw new Error(`Early demo ${phase} interruption was not exercised`);
+      if (
+        (await readdir(directory)).some((name) => name.startsWith("crew demo "))
+      )
+        throw new Error(`Early ${signal} abandoned the demo directory`);
+      if (child.exitCode !== 0)
+        throw new Error(
+          `Early ${signal} (${phase}) did not finish orderly shutdown: ${child.exitCode}/${child.signalCode}\n${startupOutput.slice(-4000)}`,
+        );
+      child.terminal!.close();
+      checks.push(
+        `early demo ${signal} cleans temporary resources during ${phase} initialization`,
+      );
+    }
+  }
   child = Bun.spawn([binary], {
     cwd: directory,
     env,

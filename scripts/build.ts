@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { version } from "../src/version";
 import { resolve, join } from "node:path";
 import { hostPlatform, platforms, type PlatformId } from "./platforms";
+import { javascriptNotices } from "./licenses";
 
 export async function buildBinary(target: PlatformId, outputDirectory: string) {
   const platform = platforms.find((p) => p.id === target);
@@ -22,6 +23,7 @@ export async function buildBinary(target: PlatformId, outputDirectory: string) {
     target: "bun",
     env: "disable",
     minify: true,
+    metafile: true,
     define: {
       __CREW_STANDALONE__: "true",
       "process.platform": JSON.stringify(platform.os),
@@ -39,6 +41,9 @@ export async function buildBinary(target: PlatformId, outputDirectory: string) {
   });
   if (!result.success)
     throw new AggregateError(result.logs, `Build failed for ${target}`);
+  if (!result.metafile) throw new Error("Missing bundled dependency inventory");
+  const notices = await javascriptNotices(Object.keys(result.metafile.inputs));
+  await writeFile(join(directory, "JS-THIRD-PARTY-NOTICES.md"), notices);
   if (platform.os === "darwin") {
     if (process.platform !== "darwin")
       throw new Error(
@@ -64,6 +69,7 @@ export async function buildBinary(target: PlatformId, outputDirectory: string) {
       {
         platform: target,
         version,
+        noticesSha256: createHash("sha256").update(notices).digest("hex"),
         sha256: createHash("sha256")
           .update(await readFile(binary))
           .digest("hex"),

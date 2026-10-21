@@ -50,6 +50,15 @@ test("host-only staging produces a small root and versioned native package", asy
     expect(native.version).toBe(version);
     expect(native.os).toEqual([host.os]);
     expect(native.cpu).toEqual([host.cpu]);
+    const notices = await readFile(
+      join(directory, `output/${host.id}/licenses/JS-THIRD-PARTY-NOTICES.md`),
+      "utf8",
+    );
+    expect(notices).toContain("Meta Platforms");
+    expect(notices).toContain("Yosuke Ota");
+    expect(notices).toContain("Permission is hereby granted");
+    expect(notices).toContain("react-reconciler");
+    expect(notices).toContain("toml-eslint-parser");
     await appendFile(join(directory, "binaries", host.id, "crew"), "tampered");
     await expect(
       stagePackages(join(directory, "binaries"), join(directory, "output"), {

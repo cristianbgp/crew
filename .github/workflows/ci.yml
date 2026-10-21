@@ -60,5 +60,6 @@ jobs:
           path: |
             dist/${{ matrix.target }}/crew
             dist/${{ matrix.target }}/build.json
+            dist/${{ matrix.target }}/JS-THIRD-PARTY-NOTICES.md
             dist/evidence/${{ matrix.target }}.json
             dist/tarballs/*.tgz

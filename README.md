@@ -117,7 +117,7 @@ crew is an early local-development tool. It has interactive terminals, startup d
 
 Commands in a workspace run with your user permissions and inherited environment. Review a shared `crew.toml` before launching it. Closing crew allows five seconds for graceful shutdown before forcing remaining owned processes to exit. Deliberately detached processes and forcibly killing crew itself can prevent normal cleanup.
 
-crew is distributed through **npm, requiring Bun**. Standalone binaries and Homebrew installation are future work. See [Distribution](docs/distribution.md).
+The 0.2.0 candidate provides standalone executables and an npm launcher requiring Node.js 22+. The published 0.1.3 preview requires Bun. Homebrew remains future work. See [Distribution](docs/distribution.md).
 
 ## Contribute
 

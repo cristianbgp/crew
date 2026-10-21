@@ -61,6 +61,8 @@ async function fixture() {
       "package/LICENSE": "MIT fixture",
       "package/THIRD_PARTY_NOTICES.md": "fixture",
       "package/licenses/BUN-LICENSE.md": "MIT Bun fixture",
+      "package/licenses/JS-THIRD-PARTY-NOTICES.md":
+        "Meta Platforms; Yosuke Ota; MIT fixture",
     });
     await writeFile(
       join(directory, `cristianbgp-crew-${p.id}-${version}.tgz`),
@@ -272,6 +274,12 @@ test("download preparation is idempotent and never overwrites different existing
     await prepareDownloads(plan, output);
     await prepareDownloads(plan, output);
     const sums = await readFile(join(output, "SHA256SUMS"), "utf8");
+    expect(
+      await readFile(
+        join(output, "licenses/darwin-arm64/JS-THIRD-PARTY-NOTICES.md"),
+        "utf8",
+      ),
+    ).toContain("Meta Platforms");
     expect(sums).toContain("crew-linux-x64");
     expect(sums).toContain(f.rootName);
     await writeFile(join(output, "crew-linux-x64"), "different");

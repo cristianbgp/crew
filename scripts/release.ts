@@ -68,7 +68,7 @@ async function inspectArchive(path: string, native: boolean) {
   const files = await new Bun.Archive(await readFile(path)).files();
   for (const name of files.keys()) {
     const allowed = native
-      ? /^package\/(package\.json|bin\/crew|LICENSE|THIRD_PARTY_NOTICES\.md|licenses\/(BUN-LICENSE\.md|LICENSE[^/]*|AUTHORS[^/]*|PATENTS[^/]*))$/
+      ? /^package\/(package\.json|bin\/crew|LICENSE|THIRD_PARTY_NOTICES\.md|licenses\/(JS-THIRD-PARTY-NOTICES\.md|BUN-LICENSE\.md|LICENSE[^/]*|AUTHORS[^/]*|PATENTS[^/]*))$/
       : /^package\/(package\.json|bin\/crew\.cjs|LICENSE|README\.md|CONTRIBUTING\.md|docs\/(configuration\.md|distribution\.md|verification\.md|images\/screenshot\.png))$/;
     if (!allowed.test(name) || name.includes(".."))
       throw new Error(`Unexpected package file: ${name}`);
@@ -165,6 +165,7 @@ export async function validateRelease(directory: string): Promise<ReleasePlan> {
       throw new Error(`Artifact checksum mismatch: ${p.id}`);
     if (
       !tar.files.has("package/licenses/BUN-LICENSE.md") ||
+      !tar.files.has("package/licenses/JS-THIRD-PARTY-NOTICES.md") ||
       !tar.files.has("package/THIRD_PARTY_NOTICES.md")
     )
       throw new Error(`Missing native license notices: ${p.id}`);
