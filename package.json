@@ -14,11 +14,13 @@
     "check": "bun run lint && bun run format:check && bun run typecheck && bun test",
     "test:terminal": "bun tests/terminal-smoke.ts",
     "format": "oxfmt --write .",
-    "lint": "oxlint --deny-warnings src tests",
-    "lint:fix": "oxlint --fix --deny-warnings src tests",
+    "lint": "oxlint --deny-warnings src tests scripts",
+    "lint:fix": "oxlint --fix --deny-warnings src tests scripts",
     "format:check": "oxfmt --check .",
     "test:soak": "bun tests/soak.tsx",
-    "install:local": "bun link"
+    "install:local": "bun link",
+    "build": "bun --no-env-file scripts/build.ts",
+    "test:standalone": "bun --no-env-file tests/standalone.ts"
   },
   "dependencies": {
     "@opentui/core": "^0.6.6",
