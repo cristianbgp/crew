@@ -15,20 +15,32 @@ Run your frontend, API, workers, and other development services in one terminal 
 
 ## Install and try
 
-Early preview. Validated on **macOS arm64 with Bun 1.4.0**. Requires [Bun](https://bun.com); Node.js alone is insufficient. Linux, Windows, and Intel Macs have not been validated.
+Early preview. This branch prepares **0.2.0**, with self-contained executables for macOS and Linux (glibc), on ARM64 and x64. The currently published **0.1.3 still requires Bun**; the commands below apply after 0.2.0 is published.
 
 Install the preview globally, then try the bundled demo:
 
 ```sh
-bun install -g @cristianbgp/crew
+npm install -g @cristianbgp/crew@0.2.0
 crew demo
 ```
 
 Or try it without a global install:
 
 ```sh
-bunx --package @cristianbgp/crew crew demo
+npx --package @cristianbgp/crew@0.2.0 crew demo
 ```
+
+The npm launcher needs **Node.js 22 or later**. It selects a matching native executable; Bun and mprocs are not required. Bun can also install the same package. Keep optional dependencies enabled: they contain the executable.
+
+For a project dependency, run `npm install --save-dev @cristianbgp/crew@0.2.0` and add a script:
+
+```json
+{ "scripts": { "dev:all": "crew" } }
+```
+
+Then run `npm run dev:all`. Your services still need their own dependencies and runtimes installed.
+
+Direct executables need neither Node nor Bun. See [Distribution](docs/distribution.md) for target selection, checksums, and installation. Windows and Alpine Linux are not supported by this release.
 
 The demo starts two small servers on random loopback ports; its worker and failure example can be started manually. Demo edits apply to the current session. Its temporary configuration is removed after the services stop.
 

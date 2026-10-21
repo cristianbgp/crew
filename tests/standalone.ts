@@ -39,6 +39,20 @@ async function until(condition: () => boolean, label: string) {
 try {
   await copyFile(source, binary);
   await chmod(binary, 0o755);
+  const helpProcess = Bun.spawn([binary, "--help"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { PATH: "" },
+  });
+  const help = await new Response(helpProcess.stdout).text();
+  if (
+    (await helpProcess.exited) !== 0 ||
+    !help.includes("crew dev") ||
+    help.includes("bun --no-env-file")
+  )
+    throw new Error(
+      "Native help must describe the installed command without source runtime instructions",
+    );
   const tools = join(directory, "empty-path");
   await mkdir(tools);
   await writeFile(

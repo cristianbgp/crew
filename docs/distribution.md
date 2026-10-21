@@ -1,79 +1,95 @@
 # Distribution
 
-crew is a command-line application that opens a TUI. Users install it once, then run `crew` inside any project containing a `crew.toml`. `crew dev` is an alias for that default flow. No shell activation, server installation, or daemon is needed.
+crew opens a terminal workspace with `crew` or `crew dev`. It needs no activation or background daemon. Package name: `@cristianbgp/crew`; command: `crew`.
 
-The public repository is [cristianbgp/crew](https://github.com/cristianbgp/crew).
+This branch prepares **0.2.0**. The published **0.1.3 requires Bun**. The installation instructions below describe 0.2.0 once published. Preparing artifacts does not publish packages or create a GitHub Release.
 
-## For contributors: run from source
+## npm installation
 
 ```sh
-bun install --frozen-lockfile
-bun run install:local
+npm install -g @cristianbgp/crew@0.2.0
 crew demo
 ```
 
-`install:local` runs `bun link`, exposing this checkout through Bun’s executable directory. It is useful for contributors; deleting or moving the checkout breaks the link. The linked command can then run another project with `crew` or `crew --config /path/to/crew.toml`.
-
-## npm package, with Bun installed
-
-The package is `@cristianbgp/crew`, and its executable remains `crew`. The current preview version is `0.1.3`.
+The launcher requires Node.js **22 or later** and selects one exact-version optional platform package. Keep optional dependencies enabled. There is no postinstall download or compilation step. No separately installed Bun or mprocs is needed: the executable embeds its runtime and terminal libraries.
 
 ```sh
-bun install -g @cristianbgp/crew
-crew
+npm install --save-dev @cristianbgp/crew@0.2.0
+# package.json: { "scripts": { "dev:all": "crew" } }
+npm run dev:all
 ```
 
-For a one-off run:
+One-off: `npx --package @cristianbgp/crew@0.2.0 crew demo`. Bun users can use `bun install -g @cristianbgp/crew@0.2.0` or `bunx --package @cristianbgp/crew@0.2.0 crew demo`.
+
+Service commands still require their own tools: `bun run dev` requires Bun for that service. Each command runs from its configured `cwd`; exported terminal variables are preserved. The launch directory's dotenv files are not automatically imported. Each service/framework loads its own env files.
+
+## Direct executables
+
+Prepared downloads contain four executables, five npm tarballs, `SHA256SUMS`, `RELEASE.json`, and licenses. Download the matching binary and checksums from the approved [GitHub release](https://github.com/cristianbgp/crew/releases), when available. A prepared CI artifact is not itself a public release.
+
+| Executable          | Target             | Native CI environment |
+| ------------------- | ------------------ | --------------------- |
+| `crew-darwin-arm64` | Apple Silicon Mac  | macOS 14              |
+| `crew-darwin-x64`   | Intel Mac          | macOS 15 Intel        |
+| `crew-linux-arm64`  | Linux ARM64, glibc | Ubuntu 24.04 ARM64    |
+| `crew-linux-x64`    | Linux x64, glibc   | Ubuntu 24.04 x64      |
+
+These are tested environments, not claims about older OS/glibc versions or every CPU. Windows, Alpine/musl and Homebrew are outside this release. macOS builds are ad-hoc signed and signature-verified; they are not Developer ID signed or notarized. macOS may ask for approval when opening a downloaded executable.
+
+Verify the downloaded file's SHA-256 against `SHA256SUMS` with `shasum -a 256` on macOS or `sha256sum` on Linux. Then, for example:
 
 ```sh
-bunx --package @cristianbgp/crew crew
+mkdir -p "$HOME/.local/bin"
+install -m 755 ./crew-darwin-arm64 "$HOME/.local/bin/crew"
+# Ensure $HOME/.local/bin is in PATH.
+crew --version
+crew demo
 ```
 
-Pin the package version when repeatability matters:
+Choose your actual target in place of `crew-darwin-arm64`. Retain the accompanying licenses. Direct executables need no Node, Bun, source checkout or node_modules.
+
+## Build and review
+
+Contributors need Bun 1.4.0 and Node.js 22+. See [Contributing](../CONTRIBUTING.md).
 
 ```sh
-bunx --package @cristianbgp/crew@0.1.3 crew
+bun install --frozen-lockfile
+bun run --no-env-file build
+bun run --no-env-file package --host-only
+bun run test:npm
 ```
 
-Bun is a runtime requirement, not just the package manager: crew uses Bun PTYs, IPC, and FFI. Node.js alone cannot run this application. The manifest declares `engines.bun`.
+`dist/npm/` holds staged manifests; `dist/tarballs/` holds packages. The source manifest deliberately has no unpublished platform optional dependencies. **Do not publish a tarball packed from the source root.** Staging adds four exact optional versions to the lightweight root launcher. Each native package contains its executable and licenses.
 
-The source package includes runtime code, its JSX configuration, public documentation, MIT license, the screenshot, and the two fixtures used by the bundled demo. `src/process/session.ts` must stay next to the manager because it is launched as a separate Bun process. No build or installation script is required.
+Darwin builds run on macOS so the final executable can be signed and verified. Each native CI job tests its actual architecture and uploads its binary, tarballs and checksum evidence after all checks pass.
 
-### Why the scope?
+## Prepare a release
 
-The unscoped name `crew` has historical unpublished versions. An authenticated release of `crew@0.1.1` was rejected with HTTP 403 by both Bun and npm's own CLI after browser authorization. Public owner lookup returned `no admin found`; the exact name restriction requires clarification from npm. The maintainer authorized using `@cristianbgp/crew` in the meantime. The command name and lowercase product branding remain `crew`.
-
-### Release checks
-
-1. Confirm the authenticated npm account and the intended package/version.
-2. Keep `package.json`, `bun.lock`, and the CLI's `--version` in sync. The current CLI returns `0.1.3` directly; release versioning is manual.
-3. Run `bun run check`, `bun run test:terminal`, and `bun audit`.
-4. Inspect `bun pm pack --dry-run` and the actual tarball. Exclude credentials, private handoff notes, generated evidence, and test suites; retain required runtime and demo files.
-5. Install that tarball with production dependencies into a disposable project. Verify help/version, interactive input, the bundled demo, and child cleanup from an unrelated working directory.
-6. Publish the exact reviewed tarball with public access, then verify registry metadata and a fresh registry installation.
-7. Keep README installation instructions and the versioned screenshot URL current. Commit/tag/push and hosted CI are separate maintainer actions.
-
-For a reviewed local tarball, use an absolute or `./`-prefixed path so npm does not interpret it as GitHub shorthand:
+1. Update the root version and documentation; synchronize the lockfile if needed. CLI and staged package versions derive from the root manifest.
+2. Run [Verification](verification.md), including dependency audit. Require all four native CI jobs to succeed for the same commit.
+3. Download all four artifacts from that run into a private directory. Preserve their directories; identical copies of the root tarball are compared. Do not mix runs or regenerate tarballs locally.
+4. Run the manual **prepare release** workflow with the successful CI run ID, or validate locally:
 
 ```sh
-npm publish ./work/cristianbgp-crew-0.1.3.tgz --access public --registry=https://registry.npmjs.org/
+bun --no-env-file scripts/release.ts --directory work/reviewed-artifacts --dry-run
+bun --no-env-file scripts/release.ts --directory work/reviewed-artifacts --prepare work/release
 ```
 
-Version `0.1.3` prevents dotenv variables from the launch directory from leaking into services in other repositories. crew and its supervisor disable automatic dotenv loading; each service command or framework loads its own files from its configured directory. Exported terminal variables are preserved. Source invocations must use `bun --no-env-file src/cli.tsx dev`.
+The tool checks archive allowlists, versions, target metadata, launcher bytes, executable payloads and all checksums. It verifies the recorded GitHub CI run and four successful native jobs. The workflow uploads reviewed downloads only; it has no npm credentials and creates no GitHub Release.
 
-The read-only macOS CI workflow checks source changes; it does not publish packages automatically.
+## Publish approved artifacts
 
-## Later: standalone binaries and Homebrew
+After maintainer approval of those exact artifacts:
 
-[Bun can compile standalone executables](https://bun.com/docs/bundler/executables), which would allow installation without a separate Bun runtime. This is a future packaging task, not a supported artifact today.
+```sh
+npm whoami
+bun --no-env-file scripts/release.ts --directory work/reviewed-artifacts --publish
+```
 
-A successful `bun build --compile` alone would be insufficient. The current manager starts `process.execPath` with a sibling `session.ts` path; a compiled executable would need an intentional supervisor entry mode or a separately packaged helper. Demo assets and OpenTUI’s native libraries would also need to be embedded or shipped and tested without `node_modules` or the source checkout. Validate each OS/architecture and cleanup behavior before promising support.
+The four `@cristianbgp/crew-{target}` packages publish first; `@cristianbgp/crew` publishes last, after all native packages are visible in the registry. Complete npm's browser authorization prompts normally.
 
-Once signed/tested macOS release artifacts exist, a Homebrew tap can install them. Linux support, Windows process/FFI differences, automatic updates, and additional package managers should follow actual validation.
+All five versions are queried before publishing. Identical registry integrity is skipped; differing integrity aborts before mutations. A partial failure leaves the root gated. A private `.release-state.json` records accepted publications so retries wait for npm processing instead of republishing. Retry with the **same directory and files**. A crashed publisher can leave `.publishing`; check that no publisher is running before removing that lock. Changed artifacts need a new version.
 
-## References
+After publication, verify registry integrities and fresh exact-version installation, demo, project scripts and cleanup. Then tag the reviewed commit and attach the prepared downloads to a GitHub Release. Those remain separate maintainer actions; there is no automatic publication, tag push or Homebrew tap.
 
-- [Bun global installation](https://bun.com/docs/pm/cli/add#global)
-- [Bun package executables and bunx](https://bun.com/docs/pm/bunx)
-- [npm package contents and bin mappings](https://docs.npmjs.com/cli/v11/configuring-npm/package-json/)
-- [Bun publishing and dry runs](https://bun.com/docs/pm/cli/publish)
+The unscoped name `crew` was rejected by npm with HTTP 403 despite authorization; the scope avoids that name restriction. Command and product branding remain `crew`.

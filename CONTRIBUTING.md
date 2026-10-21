@@ -1,6 +1,6 @@
 # Contributing to crew
 
-Use Bun 1.4.0 and Node.js 22 or later. The validated environment is macOS arm64; please include your OS, architecture, terminal, and Bun version when reporting a problem.
+Use Bun 1.4.0 and Node.js 22 or later. Native CI covers macOS and Linux glibc on ARM64 and x64; please include your OS, architecture, terminal, installation method and version when reporting a problem.
 
 ## Setup
 
@@ -11,7 +11,7 @@ bun run --no-env-file demo
 
 Link the checkout with `bun run --no-env-file install:local` if you want to run `crew` from another project. This builds and stages the host executable, links its platform package locally, then exposes the npm launcher through `bun link`. It is not a versioned release installation.
 
-When running source files directly, use `bun --no-env-file src/cli.tsx dev`. When using a package script, put `--no-env-file` on the outer Bun invocation too, as above. This prevents Bun from loading the launch directory's dotenv files into crew before the CLI starts. The installed `crew` executable and `bunx` entry point handle this automatically.
+When running source files directly, use `bun --no-env-file src/entry.ts dev`. When using a package script, put `--no-env-file` on the outer Bun invocation too, as above. This prevents Bun from loading the launch directory's dotenv files into crew before the CLI starts. Compiled executables disable that loading themselves.
 
 ## Check changes
 
@@ -31,7 +31,7 @@ bun run test:soak
 SOAK_SECONDS=7200 SOAK_SERVICES=12 bun run test:soak
 ```
 
-Report the duration actually tested; the default soak is 60 seconds. GitHub Actions runs the ordinary checks and terminal smoke test on macOS. A passing run does not establish compatibility with other operating systems or terminal hosts.
+Report the duration actually tested; the default soak is 60 seconds. GitHub Actions runs source, compiled terminal, clean-PATH native, environment and npm-install checks on all four native targets. A passing run does not establish compatibility with every OS version or terminal host.
 
 ## Project layout
 

@@ -69,7 +69,7 @@ export async function stagePackages(
       access: "public",
       registry: "https://registry.npmjs.org/",
     },
-    files: ["bin/crew.cjs", "README.md", "LICENSE", "docs"],
+    files: ["bin/crew.cjs", "README.md", "CONTRIBUTING.md", "LICENSE", "docs"],
   };
   await writeFile(
     join(root, "package.json"),
@@ -79,6 +79,7 @@ export async function stagePackages(
     "bin/crew.cjs",
     "LICENSE",
     "README.md",
+    "CONTRIBUTING.md",
     "docs/configuration.md",
     "docs/distribution.md",
     "docs/verification.md",
