@@ -13,9 +13,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: macos-latest
-    timeout-minutes: 10
+  native:
+    name: native (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-14
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-x64
+            runner: ubuntu-24.04
+    env:
+      CREW_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -23,7 +38,27 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
       - run: bun install --frozen-lockfile
+      - run: bun --no-env-file scripts/verify-target.ts "$CREW_TARGET"
       - run: bun run check
+      - run: bun run build "$CREW_TARGET"
+      - run: bun run test:standalone --binary "$PWD/dist/$CREW_TARGET/crew"
+      - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun test tests/environment.test.ts
       - run: bun run test:terminal
-      - run: bun pm pack --dry-run
+      - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun run test:terminal
+      - run: bun run test:npm
+      - run: bun run package --host-only
+      - run: bun --no-env-file scripts/verify-target.ts "$CREW_TARGET" --write-evidence
+      - uses: actions/upload-artifact@v7
+        with:
+          name: crew-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/${{ matrix.target }}/crew
+            dist/${{ matrix.target }}/build.json
+            dist/evidence/${{ matrix.target }}.json
+            dist/tarballs/*.tgz

@@ -11,7 +11,7 @@ import {
 } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { createConfig } from "../src/config/store";
+import { createConfig, loadConfig } from "../src/config/store";
 import { alive } from "./helpers";
 
 const index = process.argv.indexOf("--binary");
@@ -82,7 +82,7 @@ try {
     () => frame().includes("ENV:unset") && frame().includes("Ctrl+Q"),
     "Native startup and environment isolation",
   );
-  const pid = Number(/Process: (\d+)/.exec(frame())?.[1]);
+  let pid = Number(/Process: (\d+)/.exec(frame())?.[1]);
   if (!pid) throw new Error("Missing native shell PID");
   checks.push(
     "native UI, embedded OpenTUI assets and self-hosted supervisor without Bun/Node on PATH",
@@ -98,12 +98,55 @@ try {
   child.terminal!.write("resized\r");
   await until(() => frame().includes("ANSWER:resized"), "Native resized input");
   checks.push("interactive input and resize preserve the service session");
+  child.terminal!.write("\x0b");
+  await until(
+    () => frame().includes("Search services"),
+    "Native commands palette input",
+  );
+  const searchRow = frame()
+    .split("\n")
+    .findIndex((line) => line.includes("Search services"));
+  if (searchRow < 0) throw new Error("Native commands search is missing");
+  child.terminal!.write(
+    `\x1b[<0;5;${searchRow + 1}M\x1b[<0;5;${searchRow + 1}m`,
+  );
+  await until(
+    () => screen.buffer.active.cursorY === searchRow,
+    "Native commands input focus",
+  );
+  child.terminal!.write("restart");
+  await until(
+    () => frame().includes("Restart service"),
+    "Native restart action",
+  );
+  child.terminal!.write("\r");
+  const previous = pid;
+  await until(() => {
+    const current = Number(
+      [...frame().matchAll(/Process: (\d+)/g)].at(-1)?.[1],
+    );
+    if (current && current !== previous) {
+      pid = current;
+      return true;
+    }
+    return false;
+  }, "Native restarted service");
+  if (alive(previous))
+    throw new Error("Previous native service survived restart");
+  child.terminal!.write("after-restart\r");
+  await until(
+    () => frame().includes("ANSWER:after-restart"),
+    "Native restarted input",
+  );
+  checks.push(
+    "restart replaces the owned process and restores interactive input",
+  );
   child.terminal!.write("\x11");
   await until(() => child!.exitCode !== null, "Native quit");
   if (child.exitCode !== 0 || alive(pid))
     throw new Error(`Native quit/cleanup failed: ${child.exitCode}`);
   checks.push("Ctrl+Q exits cleanly and the shell child is gone");
-  for (const stop of ["quit", "SIGTERM"] as const) {
+  for (const stop of ["quit", "SIGTERM", "SIGHUP"] as const) {
     screen.reset();
     screen.resize(100, 30);
     child.terminal!.close();
@@ -134,7 +177,7 @@ try {
     if (temporary.length !== 1)
       throw new Error("Missing private native demo directory");
     if (stop === "quit") child.terminal!.write("\x11");
-    else child.kill("SIGTERM");
+    else child.kill(stop);
     await until(() => child!.exitCode !== null, `Native demo ${stop}`);
     if (child.exitCode !== 0 || alive(demoPid))
       throw new Error(`Native demo cleanup failed (${stop})`);
@@ -146,6 +189,190 @@ try {
       `native demo HTTP and private directory cleanup (${stop}) without Bun/Node`,
     );
   }
+  const start = (args: string[], cwd: string) => {
+    child!.terminal!.close();
+    screen.reset();
+    screen.resize(100, 30);
+    return Bun.spawn([binary, ...args], {
+      cwd,
+      env,
+      terminal: {
+        cols: 100,
+        rows: 30,
+        data(_term, bytes) {
+          screen.write(bytes);
+        },
+      },
+    });
+  };
+  const click = (label: string) => {
+    const lines = frame().split("\n"),
+      y = lines.findLastIndex((line) => line.includes(label));
+    if (y < 0) throw new Error(`Missing native control: ${label}\n${frame()}`);
+    const x = lines[y]!.indexOf(label) + 1;
+    child!.terminal!.write(
+      `\x1b[<0;${x + 1};${y + 1}M\x1b[<0;${x + 1};${y + 1}m`,
+    );
+  };
+  const workspace = join(directory, "new workspace é");
+  await mkdir(workspace);
+  child = start([], workspace);
+  await until(
+    () =>
+      frame().includes("Create your workspace") &&
+      frame().includes("Save & start"),
+    "Native first-run wizard",
+  );
+  click("Add service");
+  const focused = (label: string) =>
+    until(() => {
+      const y = frame()
+        .split("\n")
+        .findIndex((line) => line.includes(label));
+      return y >= 0 && screen.buffer.active.cursorY === y + 1;
+    }, `Native form focus: ${label}`);
+  await focused("Service name");
+  child!.terminal!.write("first-run");
+  child!.terminal!.write("\t");
+  await focused("Repo / group");
+  child!.terminal!.write("\t");
+  await focused("Directory");
+  child!.terminal!.write("\t");
+  await focused("Command");
+  child!.terminal!.write(
+    'printf "FIRST_RUN_READY:%s\\n" "$$"; while IFS= read -r line; do printf "ANSWER:%s\\n" "$line"; done',
+  );
+  await until(
+    () => frame().includes("ANSWER:%s") && frame().includes("; done"),
+    "Native service command entry",
+  );
+  click("Save service");
+  await until(
+    () => frame().includes("Save & start") && frame().includes("first-run"),
+    "Native saved service",
+  );
+  click("Save & start");
+  await until(
+    () => /FIRST_RUN_READY:\d+/.test(frame()) && frame().includes("Ctrl+Q"),
+    "Native first-run service startup",
+  );
+  const firstPid = Number(/FIRST_RUN_READY:(\d+)/.exec(frame())?.[1]);
+  child!.terminal!.write("\x11");
+  await until(() => child!.exitCode !== null, "Native first-run quit");
+  if (child!.exitCode !== 0 || alive(firstPid))
+    throw new Error("Native first-run shutdown failed");
+  if (
+    (await loadConfig(join(workspace, "crew.toml")))?.config.services[0]?.id !==
+    "first-run"
+  )
+    throw new Error("Native first-run configuration was not saved");
+  checks.push(
+    "first-run wizard saves a service and starts it without external runtimes",
+  );
+
+  const resistant = join(directory, "resistant");
+  await mkdir(resistant);
+  await createConfig(join(resistant, "crew.toml"), {
+    name: "resistant",
+    services: [
+      {
+        id: "resistant",
+        repo: "native",
+        cwd: resistant,
+        autostart: true,
+        command:
+          'trap "" INT TERM; /bin/sleep 30 & printf "RESISTANT_CHILD:%s\\n" "$!"; wait',
+      },
+    ],
+  });
+  child = start([], resistant);
+  await until(
+    () => /RESISTANT_CHILD:\d+/.test(frame()) && frame().includes("Ctrl+Q"),
+    "Native resistant child startup",
+  );
+  const resistantPid = Number(/RESISTANT_CHILD:(\d+)/.exec(frame())?.[1]);
+  if (!alive(resistantPid))
+    throw new Error(
+      "Native resistant descendant exited before cleanup was exercised",
+    );
+  child!.terminal!.write("\x11");
+  await until(() => child!.exitCode !== null, "Native forced group cleanup");
+  await until(
+    () => !alive(resistantPid),
+    "Native resistant descendant cleanup",
+  );
+  if (child!.exitCode !== 0)
+    throw new Error("Native forced cleanup exit status failed");
+  checks.push(
+    "quit force-stops SIGINT/SIGTERM-resistant descendants in the owned group",
+  );
+
+  const readiness = join(directory, "readiness");
+  await mkdir(readiness);
+  await createConfig(join(readiness, "crew.toml"), {
+    name: "readiness",
+    services: [
+      {
+        id: "waiting",
+        repo: "native",
+        cwd: readiness,
+        autostart: true,
+        command: 'printf "WAIT_PID:%s\\n" "$$"; read line',
+        ready: { log: "NEVER_READY", timeoutMs: 150 },
+      },
+      {
+        id: "healthy",
+        repo: "native",
+        cwd: readiness,
+        autostart: true,
+        command: 'printf "HEALTHY_PID:%s\\n" "$$"; read line',
+      },
+    ],
+  });
+  child = start([], readiness);
+  await until(
+    () => frame().includes("unready") && /WAIT_PID:\d+/.test(frame()),
+    "Native readiness failure",
+  );
+  const waitingPid = Number(/WAIT_PID:(\d+)/.exec(frame())?.[1]);
+  child!.terminal!.write("\x1bOQ");
+  await until(
+    () => frame().includes("Search name"),
+    "Native healthy service switcher",
+  );
+  child!.terminal!.write("healthy\r");
+  await until(
+    () => /HEALTHY_PID:\d+/.test(frame()),
+    "Native healthy service after peer readiness failure",
+  );
+  const healthyPid = Number(/HEALTHY_PID:(\d+)/.exec(frame())?.[1]);
+  if (!alive(healthyPid))
+    throw new Error("Native readiness failure stopped the healthy peer");
+  child!.terminal!.write("\x11");
+  await until(
+    () => child!.exitCode !== null,
+    "Native readiness workspace quit",
+  );
+  if (child!.exitCode !== 0 || alive(waitingPid) || alive(healthyPid))
+    throw new Error("Native readiness workspace cleanup failed");
+  checks.push(
+    "readiness failure leaves healthy services usable and all processes still clean up",
+  );
+
+  const corrupt = join(directory, "corrupt.toml");
+  await writeFile(corrupt, "name = [\n");
+  child = start(["--config", corrupt], directory);
+  await until(
+    () => child!.exitCode !== null,
+    "Native malformed configuration exit",
+  );
+  await until(
+    () => frame().includes("crew:"),
+    "Native malformed configuration diagnostic",
+  );
+  if (child!.exitCode !== 1)
+    throw new Error("Native malformed configuration did not fail");
+  checks.push("malformed configuration fails visibly before services start");
   console.log(checks.map((check) => `PASS ${check}`).join("\n"));
 } finally {
   if (child?.exitCode === null) {

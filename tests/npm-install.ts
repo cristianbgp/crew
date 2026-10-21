@@ -55,6 +55,8 @@ try {
     NPM_CONFIG_USERCONFIG: emptyConfig,
     NPM_CONFIG_GLOBALCONFIG: globalConfig,
     NPM_CONFIG_CACHE: join(root, "cache"),
+    NPM_CONFIG_PREFIX: join(root, "default-global"),
+    NPM_CONFIG_GLOBAL: "false",
     XDG_STATE_HOME: join(root, "state"),
   };
   const binaries = join(root, "binaries"),
@@ -131,7 +133,8 @@ try {
     "--registry",
     registry.url,
   ];
-  await npm(["install", "--save-dev", rootTarball, ...installArgs], project);
+  const packageSpec = `${rootManifest.name}@${version}`;
+  await npm(["install", "--save-dev", packageSpec, ...installArgs], project);
   if (process.platform === "darwin") {
     const verify = Bun.spawn(
       [
@@ -237,7 +240,7 @@ try {
   );
   const prefix = join(root, "global");
   await npm(
-    ["install", "--global", "--prefix", prefix, rootTarball, ...installArgs],
+    ["install", "--global", "--prefix", prefix, packageSpec, ...installArgs],
     project,
   );
   const globalBin = join(prefix, "bin/crew");
@@ -261,7 +264,7 @@ try {
   await mkdir(omitted);
   await writeFile(join(omitted, "package.json"), '{"private":true}');
   await npm(
-    ["install", rootTarball, "--omit=optional", ...installArgs],
+    ["install", packageSpec, "--omit=optional", ...installArgs],
     omitted,
   );
   const missing = Bun.spawn(

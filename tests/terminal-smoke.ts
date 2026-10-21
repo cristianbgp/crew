@@ -38,23 +38,31 @@ const config = await createConfig(join(dir, "crew.toml"), {
   ],
 });
 let raw = "";
-const p = Bun.spawn([resolve("src/entry.ts"), "dev", "--config", config.path], {
-  cwd: dir,
-  env: {
-    ...process.env,
-    TERM: "xterm-256color",
-    CREW_THEME: "auto",
-    XDG_STATE_HOME: join(dir, "state"),
-  },
-  terminal: {
-    cols: 110,
-    rows: 34,
-    data(_t, b) {
-      raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
-      screen.write(b);
+const p = Bun.spawn(
+  [
+    resolve(process.env.CREW_TEST_EXECUTABLE || "src/entry.ts"),
+    "dev",
+    "--config",
+    config.path,
+  ],
+  {
+    cwd: dir,
+    env: {
+      ...process.env,
+      TERM: "xterm-256color",
+      CREW_THEME: "auto",
+      XDG_STATE_HOME: join(dir, "state"),
+    },
+    terminal: {
+      cols: 110,
+      rows: 34,
+      data(_t, b) {
+        raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
+        screen.write(b);
+      },
     },
   },
-});
+);
 function frame() {
   const buf = screen.buffer.active;
   return Array.from(
@@ -205,7 +213,10 @@ try {
   await until(() => frame().includes("ANSWER:afterlogs"), "input after logs");
   checks.push("F4 output search, Pause, Latest and restored input at 40×12");
   p.terminal!.write("\x0b");
-  await until(() => frame().includes("Commands"), "command palette");
+  await until(
+    () => frame().includes("Search services"),
+    "command palette input",
+  );
   p.terminal!.write("Diagnostics\r");
   await until(
     () =>
