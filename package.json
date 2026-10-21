@@ -1,10 +1,10 @@
 {
   "name": "@cristianbgp/crew",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "type": "module",
   "description": "Your services, one workspace.",
   "bin": {
-    "crew": "./src/cli.tsx"
+    "crew": "./bin/crew.cjs"
   },
   "scripts": {
     "dev": "bun --no-env-file src/entry.ts dev",
@@ -14,19 +14,15 @@
     "check": "bun run lint && bun run format:check && bun run typecheck && bun test",
     "test:terminal": "bun tests/terminal-smoke.ts",
     "format": "oxfmt --write .",
-    "lint": "oxlint --deny-warnings src tests scripts",
-    "lint:fix": "oxlint --fix --deny-warnings src tests scripts",
+    "lint": "oxlint --deny-warnings src tests scripts bin",
+    "lint:fix": "oxlint --fix --deny-warnings src tests scripts bin",
     "format:check": "oxfmt --check .",
     "test:soak": "bun tests/soak.tsx",
-    "install:local": "bun link",
+    "install:local": "bun --no-env-file scripts/link-local.ts",
     "build": "bun --no-env-file scripts/build.ts",
-    "test:standalone": "bun --no-env-file tests/standalone.ts"
-  },
-  "dependencies": {
-    "@opentui/core": "^0.6.6",
-    "@opentui/react": "^0.6.6",
-    "react": "^19.3.1",
-    "toml-eslint-parser": "^1.0.3"
+    "test:standalone": "bun --no-env-file tests/standalone.ts",
+    "package": "bun --no-env-file scripts/package.ts",
+    "test:npm": "bun --no-env-file tests/npm-install.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.4.3",
@@ -34,7 +30,11 @@
     "@xterm/headless": "^6.0.0",
     "oxfmt": "^0.73.0",
     "oxlint": "^1.88.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "@opentui/core": "^0.6.6",
+    "@opentui/react": "^0.6.6",
+    "react": "^19.3.1",
+    "toml-eslint-parser": "^1.0.3"
   },
   "license": "MIT",
   "repository": {
@@ -46,7 +46,7 @@
     "url": "https://github.com/cristianbgp/crew/issues"
   },
   "engines": {
-    "bun": ">=1.4.0"
+    "node": ">=22"
   },
   "keywords": [
     "cli",
@@ -56,16 +56,9 @@
     "process-manager"
   ],
   "files": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "!src/**/*.test.ts",
-    "!src/**/*.test.tsx",
-    "tsconfig.json",
-    "examples/crew.toml",
-    "tests/fixtures/server.ts",
-    "tests/fixtures/interactive.ts",
+    "bin/crew.cjs",
     "LICENSE",
-    "CONTRIBUTING.md",
+    "README.md",
     "docs/configuration.md",
     "docs/distribution.md",
     "docs/verification.md",

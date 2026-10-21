@@ -1,4 +1,6 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { version } from "../src/version";
 import { resolve, join } from "node:path";
 import { hostPlatform, platforms, type PlatformId } from "./platforms";
 
@@ -56,6 +58,20 @@ export async function buildBinary(target: PlatformId, outputDirectory: string) {
         throw new Error(`Cannot sign/verify ${target}: ${error}`);
     }
   }
+  await writeFile(
+    join(directory, "build.json"),
+    JSON.stringify(
+      {
+        platform: target,
+        version,
+        sha256: createHash("sha256")
+          .update(await readFile(binary))
+          .digest("hex"),
+      },
+      null,
+      2,
+    ) + "\n",
+  );
   return binary;
 }
 if (import.meta.main)
