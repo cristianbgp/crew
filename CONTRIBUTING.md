@@ -31,7 +31,7 @@ bun run test:soak
 SOAK_SECONDS=7200 SOAK_SERVICES=12 bun run test:soak
 ```
 
-Report the duration actually tested; the default soak is 60 seconds. GitHub Actions runs source, compiled terminal, clean-PATH native, environment and npm-install checks on all four native targets. A passing run does not establish compatibility with every OS version or terminal host.
+Report the duration actually tested; the default soak is 60 seconds. Routine GitHub Actions runs source checks and terminal smoke once on Linux, plus one macOS ARM64 native smoke test. A manual full-release run adds compiled terminal, clean-PATH native, environment and npm-install checks on all four native targets. A passing run does not establish compatibility with every OS version or terminal host.
 
 ## Project layout
 

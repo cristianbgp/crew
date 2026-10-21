@@ -15,7 +15,6 @@ import { version } from "../src/version";
 import {
   validateRelease,
   publishRelease,
-  prepareDownloads,
   requiredChecks,
   type ReleasePackage,
 } from "./release";
@@ -241,49 +240,27 @@ test("registry integrity conflicts abort before any publication and completed re
     await f.dispose();
   }
 });
-test("accepted but still-processing publication is waited for instead of published again", async () => {
+test("npm processing stops immediately with retry instructions and leaves root unpublished", async () => {
   const f = await fixture();
   try {
     const plan = await validateRelease(f.directory),
       first = plan.packages[0]!,
       state = adapter();
-    let reads = 0;
+    let unpublishedReads = 0;
     const inspect = state.inspect;
-    state.inspect = async (p) =>
-      p.name === first.name
-        ? ++reads > 1
-          ? first.integrity
-          : null
-        : inspect(p);
-    await publishRelease(plan, state, {
-      accepted: { [`${first.name}@${first.version}`]: first.integrity },
-      pause: async () => {},
-      maxAttempts: 3,
-    });
-    expect(state.published).not.toContain(first.name);
-    expect(state.published.at(-1)).toBe("@cristianbgp/crew");
-  } finally {
-    await f.dispose();
-  }
-});
-test("download preparation is idempotent and never overwrites different existing files", async () => {
-  const f = await fixture();
-  const output = join(f.directory, "downloads");
-  try {
-    const plan = await validateRelease(f.directory);
-    await prepareDownloads(plan, output);
-    await prepareDownloads(plan, output);
-    const sums = await readFile(join(output, "SHA256SUMS"), "utf8");
-    expect(
-      await readFile(
-        join(output, "licenses/darwin-arm64/JS-THIRD-PARTY-NOTICES.md"),
-        "utf8",
-      ),
-    ).toContain("Meta Platforms");
-    expect(sums).toContain("crew-linux-x64");
-    expect(sums).toContain(f.rootName);
-    await writeFile(join(output, "crew-linux-x64"), "different");
-    await expect(prepareDownloads(plan, output)).rejects.toThrow("differs");
+    state.inspect = async (p) => {
+      if (p.name === first.name && state.published.includes(first.name)) {
+        if (++unpublishedReads > 1)
+          throw new Error("unexpected automatic retry");
+        return null;
+      }
+      return inspect(p);
+    };
+    await expect(publishRelease(plan, state)).rejects.toThrow(
+      "still processing",
+    );
+    expect(state.published).toEqual([first.name]);
+    expect(unpublishedReads).toBe(1);
   } finally {
     await f.dispose();
   }

@@ -4,7 +4,7 @@
 
 The 0.2.0 candidate uses Bun 1.4.0 for builds and source development, and Node 22+ for the npm launcher. Direct executables embed their runtime. OpenTUI provides the embedded terminal; `@xterm/headless` independently observes it in development tests.
 
-Native CI runs macOS 14 ARM64, macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four jobs to pass for one commit. See the exact run recorded in each release's `RELEASE.json`; a local build alone establishes only local evidence.
+Routine CI runs the source suite once on Ubuntu 24.04 and native smoke on macOS 14 ARM64. The manually requested full-release matrix additionally runs macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
 
 Windows, Alpine/musl, older OS/glibc releases, every terminal emulator and remote clipboard behavior are not established by this matrix. A terminal protocol check does not establish a manual visual review in Warp.
 
@@ -59,7 +59,7 @@ bun run test:npm
 
 A dependency audit checks known registry advisories, not every possible vulnerability. Replace `darwin-arm64` with the actual host target. The standalone harness copies the executable outside the checkout, removes runtimes from PATH, and checks the demo, setup, input, restart, readiness failure, malformed config and descendant cleanup under quit/signals. Compiled terminal smoke adds resize, appearance changes, editing and title restoration.
 
-The npm harness installs actual tarballs by name from an isolated local registry using real npm and Node, without Bun on PATH. It checks local devDependency scripts, global-prefix installation, signals, paths with spaces, missing optional packages and macOS executable signatures. It does not publish to npm or change global installations. Release tests use a fake registry adapter to verify partial failures, integrity conflicts and retries. See [Distribution](distribution.md) for the full release gate.
+The npm harness installs actual tarballs by name from an isolated local registry using real npm and Node, without Bun on PATH. It checks local devDependency scripts, global-prefix installation, signals, paths with spaces, missing optional packages and macOS executable signatures. It does not publish to npm or change global installations. Release tests use a fake registry adapter to verify partial failures, integrity conflicts, matching-version retries and stopping immediately when npm is still processing a native package. See [Distribution](distribution.md) for the full release gate.
 
 ## Initial published preview — 2026-10-20
 

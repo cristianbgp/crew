@@ -41,14 +41,7 @@ if (process.argv.includes("--write-evidence")) {
         arch: process.arch,
         osRelease: release(),
         bun: Bun.version,
-        checks: [
-          "source",
-          "standalone",
-          "environment",
-          "terminal-source",
-          "terminal-native",
-          "npm-install",
-        ],
+        checks: ["standalone", "environment", "terminal-native", "npm-install"],
         binarySha256: binaryHash,
         rootTarballSha256: await hash(
           resolve("dist/tarballs", `cristianbgp-crew-${version}.tgz`),
