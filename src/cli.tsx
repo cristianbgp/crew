@@ -5,8 +5,7 @@ import {
   type WorkspaceState,
 } from "./state/workspace";
 import { workspaceTitle } from "./terminal/title";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { version } from "./version";
 const rawArgs = process.argv.slice(2);
 const args = rawArgs[0] === "--config" ? ["dev", ...rawArgs] : rawArgs;
@@ -24,11 +23,6 @@ async function main() {
   if (!["dev", "demo"].includes(command))
     throw new Error(`Unknown command: ${command}\n${help}`);
   let path = resolve("crew.toml");
-  if (command === "demo")
-    path = resolve(
-      dirname(fileURLToPath(import.meta.url)),
-      "../examples/crew.toml",
-    );
   if (args.length > 1) {
     if (
       command !== "dev" ||
@@ -50,96 +44,106 @@ async function main() {
     throw new Error(
       "crew needs an interactive terminal. Run crew dev in your terminal.",
     );
-  // Keep help/noninteractive commands fast and avoid initializing native terminal code.
-  const [
-    { createCliRenderer },
-    { createRoot },
-    { loadConfig },
-    { createProcessManager },
-    { CrewRoot },
-  ] = await Promise.all([
-    import("@opentui/core"),
-    import("@opentui/react"),
-    import("./config/store"),
-    import("./process/manager"),
-    import("./ui/CrewRoot"),
-  ]);
-  const document = await loadConfig(path);
-  const preferences = await loadWorkspaceState(path);
-  let latestPreferences: WorkspaceState | undefined;
-  let preferenceTimer: ReturnType<typeof setTimeout> | undefined;
-  let preferenceWrite = Promise.resolve();
-  const flushPreferences = () => {
-    clearTimeout(preferenceTimer);
-    const next = latestPreferences;
-    latestPreferences = undefined;
-    if (next)
-      preferenceWrite = preferenceWrite
-        .then(() => saveWorkspaceState(path, next))
-        .then(
-          () => {},
-          () => {},
-        );
-    return preferenceWrite;
-  };
-  const rememberPreferences = (value: WorkspaceState) => {
-    latestPreferences = value;
-    clearTimeout(preferenceTimer);
-    preferenceTimer = setTimeout(() => {
-      void flushPreferences();
-    }, 250);
-  };
-  const manager = createProcessManager(document?.config.services ?? []);
-  // Save the previous tab/window title before OpenTUI takes stdout ownership.
-  process.stdout.write("\x1b[22;0t");
-  const renderer = await createCliRenderer({
-    exitOnCtrlC: false,
-    targetFps: 30,
-    useMouse: true,
-    backgroundColor: "#111318",
-  }).catch((error) => {
-    process.stdout.write("\x1b[23;0t");
-    throw error;
-  });
-  process.title = "crew";
-  const updateTitle = (name: string | null) =>
-    renderer.setTerminalTitle(workspaceTitle(name));
-  let closing: Promise<void> | undefined;
-  const quit = () => {
-    if (closing) return;
-    closing = manager.shutdown().finally(() => renderer.destroy());
-  };
-  const signal = () => quit();
-  process.on("SIGINT", signal);
-  process.on("SIGTERM", signal);
+  const demo =
+    command === "demo"
+      ? await (await import("./demo/workspace")).createDemoWorkspace()
+      : null;
+  if (demo) path = demo.path;
   try {
-    createRoot(renderer).render(
-      <CrewRoot
-        onWorkspaceNameChange={updateTitle}
-        theme={themePreference}
-        initialPreferences={preferences}
-        onPreferencesChange={rememberPreferences}
-        initialDocument={document}
-        path={path}
-        manager={manager}
-        onQuit={quit}
-      />,
-    );
-    if (document)
-      await Promise.all(
-        document.config.services
-          .filter((s) => s.autostart)
-          .map((s) => manager.start(s.id)),
+    // Keep help/noninteractive commands fast and avoid initializing native terminal code.
+    const [
+      { createCliRenderer },
+      { createRoot },
+      { loadConfig },
+      { createProcessManager },
+      { CrewRoot },
+    ] = await Promise.all([
+      import("@opentui/core"),
+      import("@opentui/react"),
+      import("./config/store"),
+      import("./process/manager"),
+      import("./ui/CrewRoot"),
+    ]);
+    const document = await loadConfig(path);
+    const preferences = await loadWorkspaceState(path);
+    let latestPreferences: WorkspaceState | undefined;
+    let preferenceTimer: ReturnType<typeof setTimeout> | undefined;
+    let preferenceWrite = Promise.resolve();
+    const flushPreferences = () => {
+      clearTimeout(preferenceTimer);
+      const next = latestPreferences;
+      latestPreferences = undefined;
+      if (next)
+        preferenceWrite = preferenceWrite
+          .then(() => saveWorkspaceState(path, next))
+          .then(
+            () => {},
+            () => {},
+          );
+      return preferenceWrite;
+    };
+    const rememberPreferences = (value: WorkspaceState) => {
+      if (demo) return;
+      latestPreferences = value;
+      clearTimeout(preferenceTimer);
+      preferenceTimer = setTimeout(() => {
+        void flushPreferences();
+      }, 250);
+    };
+    const manager = createProcessManager(document?.config.services ?? []);
+    // Save the previous tab/window title before OpenTUI takes stdout ownership.
+    process.stdout.write("\x1b[22;0t");
+    const renderer = await createCliRenderer({
+      exitOnCtrlC: false,
+      targetFps: 30,
+      useMouse: true,
+      backgroundColor: "#111318",
+    }).catch((error) => {
+      process.stdout.write("\x1b[23;0t");
+      throw error;
+    });
+    process.title = "crew";
+    const updateTitle = (name: string | null) =>
+      renderer.setTerminalTitle(workspaceTitle(name));
+    let closing: Promise<void> | undefined;
+    const quit = () => {
+      if (closing) return;
+      closing = manager.shutdown().finally(() => renderer.destroy());
+    };
+    const signal = () => quit();
+    process.on("SIGINT", signal);
+    process.on("SIGTERM", signal);
+    try {
+      createRoot(renderer).render(
+        <CrewRoot
+          onWorkspaceNameChange={updateTitle}
+          theme={themePreference}
+          initialPreferences={preferences}
+          onPreferencesChange={rememberPreferences}
+          initialDocument={document}
+          path={path}
+          manager={manager}
+          onQuit={quit}
+        />,
       );
-    await renderer.closed;
+      if (document)
+        await Promise.all(
+          document.config.services
+            .filter((s) => s.autostart)
+            .map((s) => manager.start(s.id)),
+        );
+      await renderer.closed;
+    } finally {
+      await manager.shutdown();
+      await flushPreferences();
+      renderer.destroy();
+      await renderer.closed;
+      process.stdout.write("\x1b[23;0t");
+      process.off("SIGINT", signal);
+      process.off("SIGTERM", signal);
+    }
   } finally {
-    await manager.shutdown();
-    await flushPreferences();
-    renderer.destroy();
-    await renderer.closed;
-    process.stdout.write("\x1b[23;0t");
-    process.off("SIGINT", signal);
-    process.off("SIGTERM", signal);
+    await demo?.dispose();
   }
 }
 await main().catch((e) => {

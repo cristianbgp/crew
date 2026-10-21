@@ -5,6 +5,7 @@ import {
   copyFile,
   mkdir,
   mkdtemp,
+  readdir,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -102,6 +103,49 @@ try {
   if (child.exitCode !== 0 || alive(pid))
     throw new Error(`Native quit/cleanup failed: ${child.exitCode}`);
   checks.push("Ctrl+Q exits cleanly and the shell child is gone");
+  for (const stop of ["quit", "SIGTERM"] as const) {
+    screen.reset();
+    screen.resize(100, 30);
+    child.terminal!.close();
+    child = Bun.spawn([binary, "demo"], {
+      cwd: directory,
+      env: { ...env, TMPDIR: directory },
+      terminal: {
+        cols: 100,
+        rows: 30,
+        data(_term, bytes) {
+          screen.write(bytes);
+        },
+      },
+    });
+    await until(
+      () => frame().includes("web is running") && frame().includes("Ctrl+Q"),
+      "Native demo startup",
+    );
+    const demoPid = Number(/Process: (\d+)/.exec(frame())?.[1]);
+    const url = /http:\/\/127\.0\.0\.1:\d+/.exec(frame())?.[0];
+    if (!demoPid || !url)
+      throw new Error(`Missing native demo details\n${frame()}`);
+    if ((await (await fetch(url)).text()) !== "Hello from crew demo web\n")
+      throw new Error("Native demo did not respond");
+    const temporary = (await readdir(directory)).filter((name) =>
+      name.startsWith("crew demo "),
+    );
+    if (temporary.length !== 1)
+      throw new Error("Missing private native demo directory");
+    if (stop === "quit") child.terminal!.write("\x11");
+    else child.kill("SIGTERM");
+    await until(() => child!.exitCode !== null, `Native demo ${stop}`);
+    if (child.exitCode !== 0 || alive(demoPid))
+      throw new Error(`Native demo cleanup failed (${stop})`);
+    if (
+      (await readdir(directory)).some((name) => name.startsWith("crew demo "))
+    )
+      throw new Error("Native demo directory survived exit");
+    checks.push(
+      `native demo HTTP and private directory cleanup (${stop}) without Bun/Node`,
+    );
+  }
   console.log(checks.map((check) => `PASS ${check}`).join("\n"));
 } finally {
   if (child?.exitCode === null) {

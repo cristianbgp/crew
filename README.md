@@ -30,7 +30,7 @@ Or try it without a global install:
 bunx --package @cristianbgp/crew crew demo
 ```
 
-The demo starts two small servers on random loopback ports; its worker and failure example can be started manually. Demo edits are saved in the installed `examples/crew.toml`.
+The demo starts two small servers on random loopback ports; its worker and failure example can be started manually. Demo edits apply to the current session. Its temporary configuration is removed after the services stop.
 
 For development from a source checkout, see [Contributing](CONTRIBUTING.md).
 
