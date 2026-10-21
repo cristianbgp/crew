@@ -5,7 +5,7 @@
 Run your frontend, API, workers, and other development services in one terminal workspace. Keep their output and interactive terminals together, whether they live in a monorepo or across several local repositories.
 
 <div align="center">
-  <img src="https://unpkg.com/@cristianbgp/crew@0.1.2/docs/images/screenshot.png" alt="crew terminal workspace" />
+  <img src="https://unpkg.com/@cristianbgp/crew@0.1.3/docs/images/screenshot.png" alt="crew terminal workspace" />
 </div>
 
 - **One command to start.** Run `crew` to launch configured services. No configuration? A setup form helps you create one.

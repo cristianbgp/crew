@@ -209,6 +209,8 @@ export function createProcessManager(
       const proc = Bun.spawn(
         [
           process.execPath,
+          // Only the service's runtime/framework should resolve its dotenv files.
+          "--no-env-file",
           fileURLToPath(new URL("./session.ts", import.meta.url)),
           process.env.SHELL || "/bin/sh",
           definition.command,

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env -S bun --no-env-file
 import {
   loadWorkspaceState,
   saveWorkspaceState,
@@ -10,14 +10,14 @@ import { fileURLToPath } from "node:url";
 const rawArgs = process.argv.slice(2);
 const args = rawArgs[0] === "--config" ? ["dev", ...rawArgs] : rawArgs;
 const command = args[0] ?? "dev";
-const help = `crew — your services, one workspace.\n\nUsage:\n  crew                      Start services from ./crew.toml\n  crew dev                  Start services from ./crew.toml\n  crew dev --config <file>  Use another workspace file\n  crew demo                 Try the bundled demo without changing your repos\n  crew --help\n  crew --version\n\nRun locally with: bun run src/cli.tsx dev\n`;
+const help = `crew — your services, one workspace.\n\nUsage:\n  crew                      Start services from ./crew.toml\n  crew dev                  Start services from ./crew.toml\n  crew dev --config <file>  Use another workspace file\n  crew demo                 Try the bundled demo without changing your repos\n  crew --help\n  crew --version\n\nRun locally with: bun --no-env-file src/cli.tsx dev\n`;
 async function main() {
   if (command === "--help" || command === "-h") {
     console.log(help);
     return;
   }
   if (command === "--version") {
-    console.log("0.1.2");
+    console.log("0.1.3");
     return;
   }
   if (!["dev", "demo"].includes(command))

@@ -38,26 +38,23 @@ const config = await createConfig(join(dir, "crew.toml"), {
   ],
 });
 let raw = "";
-const p = Bun.spawn(
-  [process.execPath, resolve("src/cli.tsx"), "dev", "--config", config.path],
-  {
-    cwd: dir,
-    env: {
-      ...process.env,
-      TERM: "xterm-256color",
-      CREW_THEME: "auto",
-      XDG_STATE_HOME: join(dir, "state"),
-    },
-    terminal: {
-      cols: 110,
-      rows: 34,
-      data(_t, b) {
-        raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
-        screen.write(b);
-      },
+const p = Bun.spawn([resolve("src/cli.tsx"), "dev", "--config", config.path], {
+  cwd: dir,
+  env: {
+    ...process.env,
+    TERM: "xterm-256color",
+    CREW_THEME: "auto",
+    XDG_STATE_HOME: join(dir, "state"),
+  },
+  terminal: {
+    cols: 110,
+    rows: 34,
+    data(_t, b) {
+      raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
+      screen.write(b);
     },
   },
-);
+});
 function frame() {
   const buf = screen.buffer.active;
   return Array.from(

@@ -6,10 +6,12 @@ Use macOS and Bun 1.4.0 or later. The validated environment is macOS arm64; plea
 
 ```sh
 bun install --frozen-lockfile
-bun run demo
+bun run --no-env-file demo
 ```
 
 Link the checkout with `bun run install:local` if you want to run `crew` from another project. Linking exposes this working tree; it is not a versioned release installation.
+
+When running source files directly, use `bun --no-env-file src/cli.tsx dev`. When using a package script, put `--no-env-file` on the outer Bun invocation too, as above. This prevents Bun from loading the launch directory's dotenv files into crew before the CLI starts. The installed `crew` executable and `bunx` entry point handle this automatically.
 
 ## Check changes
 

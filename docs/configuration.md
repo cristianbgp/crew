@@ -28,6 +28,16 @@ Paths are relative to the configuration file. Absolute paths also work. `repo` i
 
 Commands run in your configured shell using `-c`, with the selected working directory and inherited environment. crew does not load login profiles, install dependencies or run database migrations for you. Include any environment setup in your command, for example `bun --env-file=.env run dev`. Existing Portless commands can be used directly.
 
+### Environment files across repositories
+
+crew and its process supervisor do not load dotenv files. Each service runs from its own `cwd`, so its command or framework resolves `.env`, `.env.local`, and mode-specific files using that project's normal rules. Starting crew in repo A does not copy repo A's dotenv variables into a service in repo B. A plain shell or runtime without dotenv support still needs an explicit loader in its command.
+
+For example, if `cwd = "../api"`, `command = "bun run dev"` lets Bun load the API project's environment files. To choose a file explicitly, use `command = "bun --env-file=.env.staging run dev"`; the file path is relative to the service directory. crew does not force `NODE_ENV` or change the framework's file precedence.
+
+Variables already exported in your terminal are inherited by every service, including values exported by tools such as direnv. Their precedence follows the service's dotenv loader; Bun gives inherited values priority over dotenv files. Inline assignments such as `NODE_ENV=production bun run start` remain part of the command.
+
+Use the installed `crew` command or `bunx --package @cristianbgp/crew crew` for automatic startup isolation. If invoking source through Bun yourself, use `bun --no-env-file src/cli.tsx dev` or `bun run --no-env-file dev`. Otherwise, the outer Bun process can load dotenv before crew gets control, making those values indistinguishable from exported terminal variables.
+
 ## Using the interface
 
 Press **F1** or click **Shortcuts** (**Help** in narrow windows) for the searchable keyboard guide. Type an action, key or scope—for example `restart`, `Ctrl+Q` or `forms`. Daily essentials come first; each entry shows where it works. Use arrows or Page Up / Page Down to scroll, Tab to reach footer actions, and **Escape** or **F1** to close. Function keys may require Fn on Mac keyboards. The guide is available during setup and editing, preserves unsaved fields, and restores focus when closed. It is also available by searching `shortcuts` in Commands.
