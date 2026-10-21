@@ -38,7 +38,7 @@ const config = await createConfig(join(dir, "crew.toml"), {
   ],
 });
 let raw = "";
-const p = Bun.spawn([resolve("src/cli.tsx"), "dev", "--config", config.path], {
+const p = Bun.spawn([resolve("src/entry.ts"), "dev", "--config", config.path], {
   cwd: dir,
   env: {
     ...process.env,

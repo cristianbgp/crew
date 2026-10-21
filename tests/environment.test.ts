@@ -14,7 +14,10 @@ import { join, resolve } from "node:path";
 import { createConfig } from "../src/config/store";
 import { alive, quote, waitFor } from "./helpers";
 
-const cli = resolve("src/cli.tsx");
+const cli = resolve(process.env.CREW_TEST_EXECUTABLE || "src/entry.ts");
+const sourceEntry = resolve(
+  process.env.CREW_TEST_SOURCE_ENTRY || "src/entry.ts",
+);
 const launches = ["executable", "bunx", "source"] as const;
 
 for (const launch of launches) {
@@ -104,7 +107,7 @@ setInterval(() => {}, 60000);
             ? [cli]
             : launch === "bunx"
               ? [process.execPath, "x", "--no-install", "crew-env-fixture"]
-              : [process.execPath, "--no-env-file", cli],
+              : [process.execPath, "--no-env-file", sourceEntry],
           {
             cwd: a,
             env,

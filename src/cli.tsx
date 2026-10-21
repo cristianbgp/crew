@@ -7,6 +7,7 @@ import {
 import { workspaceTitle } from "./terminal/title";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { version } from "./version";
 const rawArgs = process.argv.slice(2);
 const args = rawArgs[0] === "--config" ? ["dev", ...rawArgs] : rawArgs;
 const command = args[0] ?? "dev";
@@ -17,7 +18,7 @@ async function main() {
     return;
   }
   if (command === "--version") {
-    console.log("0.1.3");
+    console.log(version);
     return;
   }
   if (!["dev", "demo"].includes(command))
