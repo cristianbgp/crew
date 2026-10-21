@@ -2,8 +2,14 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_release:
+        description: Build and verify all four release platforms
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,8 +19,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: macos-latest
+  checks:
+    name: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run test:terminal
+
+  smoke:
+    name: native smoke (macOS ARM64)
+    needs: checks
+    if: ${{ !inputs.full_release }}
+    runs-on: macos-14
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -24,6 +51,56 @@ jobs:
         with:
           bun-version: 1.4.0
       - run: bun install --frozen-lockfile
-      - run: bun run check
-      - run: bun run test:terminal
-      - run: bun pm pack --dry-run
+      - run: bun run build darwin-arm64
+      - run: bun run test:standalone --binary "$PWD/dist/darwin-arm64/crew"
+
+  native:
+    name: native (${{ matrix.target }})
+    needs: checks
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-14
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-x64
+            runner: ubuntu-24.04
+    env:
+      CREW_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: bun install --frozen-lockfile
+      - run: bun --no-env-file scripts/verify-target.ts "$CREW_TARGET"
+      - run: bun run build "$CREW_TARGET"
+      - run: bun run test:standalone --binary "$PWD/dist/$CREW_TARGET/crew"
+      - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun test tests/environment.test.ts
+      - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun run test:terminal
+      - run: bun run test:npm
+      - run: bun run package --host-only
+      - run: bun --no-env-file scripts/verify-target.ts "$CREW_TARGET" --write-evidence
+      - uses: actions/upload-artifact@v7
+        with:
+          name: crew-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/${{ matrix.target }}/crew
+            dist/${{ matrix.target }}/build.json
+            dist/${{ matrix.target }}/JS-THIRD-PARTY-NOTICES.md
+            dist/evidence/${{ matrix.target }}.json
+            dist/tarballs/*.tgz

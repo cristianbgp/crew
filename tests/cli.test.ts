@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test";
 import { resolve } from "node:path";
-const cli = resolve("src/cli.tsx");
+import { version } from "../package.json";
+const cli = resolve("src/entry.ts");
 async function run(args: string[]) {
   const p = Bun.spawn([cli, ...args], {
     stdout: "pipe",
@@ -15,7 +16,7 @@ async function run(args: string[]) {
 }
 test("help and version work without a TTY, invalid args exit nonzero", async () => {
   expect((await run(["--help"])).out).toContain("crew dev");
-  expect((await run(["--version"])).out).toContain("0.1.3");
+  expect((await run(["--version"])).out).toContain(version);
   expect((await run(["unknown"])).code).toBe(1);
 });
 test("dev without a TTY exits instead of waiting for input", async () => {

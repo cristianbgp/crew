@@ -38,23 +38,31 @@ const config = await createConfig(join(dir, "crew.toml"), {
   ],
 });
 let raw = "";
-const p = Bun.spawn([resolve("src/cli.tsx"), "dev", "--config", config.path], {
-  cwd: dir,
-  env: {
-    ...process.env,
-    TERM: "xterm-256color",
-    CREW_THEME: "auto",
-    XDG_STATE_HOME: join(dir, "state"),
-  },
-  terminal: {
-    cols: 110,
-    rows: 34,
-    data(_t, b) {
-      raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
-      screen.write(b);
+const p = Bun.spawn(
+  [
+    resolve(process.env.CREW_TEST_EXECUTABLE || "src/entry.ts"),
+    "dev",
+    "--config",
+    config.path,
+  ],
+  {
+    cwd: dir,
+    env: {
+      ...process.env,
+      TERM: "xterm-256color",
+      CREW_THEME: "auto",
+      XDG_STATE_HOME: join(dir, "state"),
+    },
+    terminal: {
+      cols: 110,
+      rows: 34,
+      data(_t, b) {
+        raw = (raw + new TextDecoder().decode(b)).slice(-1_048_576);
+        screen.write(b);
+      },
     },
   },
-});
+);
 function frame() {
   const buf = screen.buffer.active;
   return Array.from(
@@ -70,7 +78,8 @@ async function until(fn: () => boolean, label: string, ms = 8000) {
 function click(x: number, y: number) {
   p.terminal!.write(`\x1b[<0;${x + 1};${y + 1}M\x1b[<0;${x + 1};${y + 1}m`);
 }
-function clickText(text: string) {
+async function clickText(text: string) {
+  await until(() => frame().includes(text), `control ${text}`);
   const lines = frame().split("\n");
   const y = lines.findLastIndex((l) => l.includes(text));
   if (y < 0) throw new Error("Missing control " + text + "\n" + frame());
@@ -91,14 +100,14 @@ try {
   await until(() => frame().includes("ANSWER:hello crew"), "interactive input");
   checks.push("interactive input");
   await writeFile("work/terminal-start.txt", frame());
-  clickText("More");
+  await clickText("More");
   await until(() => frame().includes("Service actions"), "service actions");
-  clickText("Edit");
+  await clickText("Edit");
   await until(() => frame().includes("Edit service"), "editor");
   checks.push("editor opens");
-  clickText("Cancel");
+  await clickText("Cancel");
   await until(() => !frame().includes("Edit service"), "cancel");
-  clickText("flood");
+  await clickText("flood");
   await until(
     () =>
       frame()
@@ -107,10 +116,10 @@ try {
         .some((line) => line.includes("flood") && line.includes("stopped")),
     "select flood",
   );
-  clickText("Start");
+  await clickText("Start");
   await until(() => frame().includes("0123456789abcdef"), "output");
   const start = Date.now();
-  clickText("interactive");
+  await clickText("interactive");
   await until(
     () => frame().includes("ANSWER:hello crew"),
     "switch during flood",
@@ -125,7 +134,7 @@ try {
   );
   checks.push("responsive mouse and input while background emits ~1 MiB/s");
   while (Date.now() - start < 10_500) await Bun.sleep(100);
-  clickText("flood");
+  await clickText("flood");
   await until(() => frame().includes("FLOOD_DONE"), "flood completed");
   checks.push("10 seconds of output completed; history remains usable");
   p.terminal!.resize(65, 24);
@@ -133,9 +142,9 @@ try {
   await until(() => frame().includes("Services"), "resize");
   await Bun.sleep(150);
   checks.push("resize to 65×24");
-  clickText("Services");
+  await clickText("Services");
   await until(() => frame().includes("Close services"), "narrow drawer");
-  clickText("interactive");
+  await clickText("interactive");
   await until(
     () =>
       !frame().includes("Close services") &&
@@ -150,9 +159,9 @@ try {
     screen.resize(cols!, rows!);
     await Bun.sleep(150);
     await until(() => frame().includes("More"), "compact actions");
-    clickText("More");
+    await clickText("More");
     await until(() => frame().includes("Service actions"), "compact menu");
-    clickText("Edit");
+    await clickText("Edit");
     await until(
       () =>
         frame().includes("Edit service") &&
@@ -160,7 +169,7 @@ try {
         frame().includes("Cancel"),
       "compact editor",
     );
-    clickText("Cancel");
+    await clickText("Cancel");
     await until(() => !frame().includes("Edit service"), "compact cancel");
     p.terminal!.write("compact" + cols + "\r");
     await until(
@@ -192,9 +201,9 @@ try {
   await until(() => frame().includes("Search output"), "output inspector");
   p.terminal!.write("compact40");
   await until(() => frame().includes("compact40"), "filtered output");
-  clickText("Pause");
+  await clickText("Pause");
   await until(() => frame().includes("Resume"), "pause output view");
-  clickText("Latest");
+  await clickText("Latest");
   await until(() => frame().includes("Pause"), "follow latest output");
   p.terminal!.write("\x1b");
   await until(
@@ -205,7 +214,10 @@ try {
   await until(() => frame().includes("ANSWER:afterlogs"), "input after logs");
   checks.push("F4 output search, Pause, Latest and restored input at 40×12");
   p.terminal!.write("\x0b");
-  await until(() => frame().includes("Commands"), "command palette");
+  await until(
+    () => frame().includes("Search services"),
+    "command palette input",
+  );
   p.terminal!.write("Diagnostics\r");
   await until(
     () =>

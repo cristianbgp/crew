@@ -40,6 +40,7 @@ test("mouse Copy sends only selected text to the clipboard and removes the typin
       await t.mockMouse.drag(term.x, term.y, term.x + 5, term.y);
     });
     expect(term.getSelectedText()).toBe("SELECT");
+    await t.renderOnce();
     const lines = t.captureCharFrame().split("\n");
     const y = lines.findIndex((l) => l.includes("Copy"));
     await act(async () => {

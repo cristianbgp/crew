@@ -32,6 +32,7 @@ import { TerminalPane } from "./TerminalPane";
 import { ServiceControls, type ServiceAction } from "./ServiceControls";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { useProcessSnapshots } from "./useProcessSnapshots";
 export interface AppProps {
   initialPreferences?: WorkspaceState;
   onPreferencesChange?: (state: WorkspaceState) => void;
@@ -82,7 +83,7 @@ export function App({
   const [groupReport, setGroupReport] = useState<string | null>(null);
   const [groupProgress, setGroupProgress] = useState("");
   const groupBusy = useRef(false);
-  const [snapshots, setSnapshots] = useState(manager.getSnapshot);
+  const snapshots = useProcessSnapshots(manager);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -169,10 +170,6 @@ export function App({
         renderer.root.findDescendantById("crew-sidebar"),
       )[0]?.focus();
   }, [drawerOpen, renderer]);
-  useEffect(
-    () => manager.subscribe(() => setSnapshots(manager.getSnapshot())),
-    [manager],
-  );
   useEffect(() => {
     if (!config.services.some((s) => s.id === selected))
       setSelected(config.services[0]?.id ?? null);

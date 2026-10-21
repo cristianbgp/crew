@@ -89,7 +89,7 @@ test("kernel ownership releases when the lock holder is killed", async () => {
       [
         process.execPath,
         "-e",
-        `const {acquireConfigLock}=await import(${JSON.stringify(modulePath)});await acquireConfigLock(${JSON.stringify(path)});process.stdout.write("LOCKED");setInterval(()=>{},60000);`,
+        `const {acquireConfigLock}=await import(${JSON.stringify(modulePath)});globalThis.releaseCrewLock=await acquireConfigLock(${JSON.stringify(path)});Bun.gc(true);await Bun.sleep(10);process.stdout.write("LOCKED");setInterval(()=>{},60000);`,
       ],
       { stdout: "pipe", stderr: "inherit" },
     );

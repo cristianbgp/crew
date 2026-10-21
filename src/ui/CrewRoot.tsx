@@ -14,6 +14,7 @@ import { ThemeProvider, useTheme, type ThemePreference } from "./theme";
 import { loadConfig, createConfig, type ConfigDocument } from "../config/store";
 import type { ProcessManager } from "../process/manager";
 import { applyServiceChange } from "./edit-service";
+import { useProcessSnapshots } from "./useProcessSnapshots";
 export function CrewRoot(props: CrewRootProps) {
   return (
     <ThemeProvider preference={props.theme}>
@@ -23,12 +24,7 @@ export function CrewRoot(props: CrewRootProps) {
 }
 function ThemedCrewRoot(props: CrewRootProps) {
   const [closing, setClosing] = useState(false);
-  const [snapshots, setSnapshots] = useState(props.manager.getSnapshot);
-  useEffect(
-    () =>
-      props.manager.subscribe(() => setSnapshots(props.manager.getSnapshot())),
-    [props.manager],
-  );
+  const snapshots = useProcessSnapshots(props.manager);
   const quit = () => {
     if (closing) return;
     setClosing(true);
@@ -79,7 +75,7 @@ function Workspace({
     setNoticeError(error);
   }
   const [busy, setBusy] = useState(false);
-  const [snapshots, setSnapshots] = useState(manager.getSnapshot);
+  const snapshots = useProcessSnapshots(manager);
   const renderer = useRenderer();
   useKeyboard((key) => {
     if (removing === null) return;
@@ -106,10 +102,6 @@ function Workspace({
     const timer = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(timer);
   }, [notice, removing, noticeError]);
-  useEffect(
-    () => manager.subscribe(() => setSnapshots(manager.getSnapshot())),
-    [manager],
-  );
   async function reload() {
     const next = await loadConfig(path);
     if (!next) throw new Error("crew.toml no longer exists.");

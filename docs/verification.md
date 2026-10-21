@@ -2,11 +2,11 @@
 
 ## Supported evidence
 
-The current validated environment is macOS arm64 with Bun 1.4.0. OpenTUI provides the native embedded terminal; `@xterm/headless` is a development dependency used to observe the outer terminal in smoke tests.
+The 0.2.0 candidate uses Bun 1.4.0 for builds and source development, and Node 22+ for the npm launcher. Direct executables embed their runtime. OpenTUI provides the embedded terminal; `@xterm/headless` independently observes it in development tests.
 
-The latest local application check completed with 96 passing tests across 28 files, and the real CLI smoke test completed 16 checks. Counts describe that run, not a release guarantee. Run the commands below against the commit you intend to share.
+Routine CI runs the source suite once on Ubuntu 24.04 and native smoke on macOS 14 ARM64. The manually requested full-release matrix additionally runs macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
 
-Linux, Windows, Intel Macs, every terminal emulator, remote clipboard behavior, and standalone binary installation have not been validated. A terminal protocol check does not establish a manual visual review in Warp.
+Windows, Alpine/musl, older OS/glibc releases, every terminal emulator and remote clipboard behavior are not established by this matrix. A terminal protocol check does not establish a manual visual review in Warp.
 
 ## Static and behavior checks
 
@@ -50,10 +50,16 @@ Measurements do not include all child-process memory or establish a long-term me
 
 ```sh
 bun audit
-bun pm pack --dry-run
+bun run --no-env-file build
+bun run test:standalone --binary "$PWD/dist/darwin-arm64/crew"
+CREW_TEST_EXECUTABLE="$PWD/dist/darwin-arm64/crew" bun test tests/environment.test.ts
+CREW_TEST_EXECUTABLE="$PWD/dist/darwin-arm64/crew" bun run test:terminal
+bun run test:npm
 ```
 
-A dependency audit checks known registry advisories, not every possible vulnerability. Packing inspects what would ship; it does not prove that an installed package works. Verify the actual tarball from a separate consumer directory before publishing. See [Distribution](distribution.md) for that release checklist.
+A dependency audit checks known registry advisories, not every possible vulnerability. Replace `darwin-arm64` with the actual host target. The standalone harness copies the executable outside the checkout, removes runtimes from PATH, and checks the demo, setup, input, restart, readiness failure, malformed config and descendant cleanup under quit/signals. Compiled terminal smoke adds resize, appearance changes, editing and title restoration.
+
+The npm harness installs actual tarballs by name from an isolated local registry using real npm and Node, without Bun on PATH. It checks local devDependency scripts, global-prefix installation, signals, paths with spaces, missing optional packages and macOS executable signatures. It does not publish to npm or change global installations. Release tests use a fake registry adapter to verify partial failures, integrity conflicts, matching-version retries and stopping immediately when npm is still processing a native package. See [Distribution](distribution.md) for the full release gate.
 
 ## Initial published preview — 2026-10-20
 

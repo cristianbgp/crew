@@ -3,6 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx",
     "jsxImportSource": "@opentui/react",
@@ -11,5 +12,5 @@
     "noEmit": true,
     "types": ["bun"]
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "scripts", "bin"]
 }

@@ -1,7 +1,7 @@
 import { validateDependencies } from "../config/validation";
 import { probeReady } from "./readiness";
 import { statSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { internalCommand } from "../runtime/launch";
 import type { ServiceDefinition } from "../config/types";
 import type { OutputEvent, ServiceSnapshot } from "./types";
 
@@ -207,14 +207,10 @@ export function createProcessManager(
         s.finishCommand = resolve;
       });
       const proc = Bun.spawn(
-        [
-          process.execPath,
-          // Only the service's runtime/framework should resolve its dotenv files.
-          "--no-env-file",
-          fileURLToPath(new URL("./session.ts", import.meta.url)),
+        internalCommand("session", [
           process.env.SHELL || "/bin/sh",
           definition.command,
-        ],
+        ]),
         {
           cwd: definition.cwd,
           detached: true,

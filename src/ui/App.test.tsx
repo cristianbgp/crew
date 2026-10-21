@@ -20,6 +20,39 @@ const services = [
     autostart: false,
   },
 ];
+test("initial snapshot changes before subscription are reflected without another event", async () => {
+  const manager = createProcessManager(services, { stopTimeoutMs: 100 });
+  let snapshot = manager.getSnapshot().map((s) => ({
+    ...s,
+    state: "running" as const,
+    readiness: "waiting" as "waiting" | "failed",
+  }));
+  const racingManager = {
+    ...manager,
+    getSnapshot: () => snapshot,
+    subscribe: (listener: () => void) => {
+      snapshot = snapshot.map((s) => ({ ...s, readiness: "failed" }));
+      return manager.subscribe(listener);
+    },
+  };
+  const t = await testRender(
+    <App
+      config={{ name: "Race", services }}
+      manager={racingManager}
+      onQuit={() => {}}
+    />,
+    { width: 100, height: 26, exitOnCtrlC: false },
+  );
+  try {
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("unready");
+  } finally {
+    await act(async () => {
+      await t.dispose();
+      await manager.shutdown();
+    });
+  }
+});
 test("sidebar switches retained interactive terminals with mouse and visible controls", async () => {
   const manager = createProcessManager(services, { stopTimeoutMs: 100 });
   const t = await testRender(
