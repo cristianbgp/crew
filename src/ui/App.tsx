@@ -515,7 +515,12 @@ export function App({
       openSwitcher();
       return;
     }
-    if (!dialog && !logsOpen && key.name === "f4" && selected) {
+    if (
+      !dialog &&
+      !logsOpen &&
+      (key.name === "f4" || (key.ctrl && key.name === "f")) &&
+      selected
+    ) {
       key.preventDefault();
       key.stopPropagation();
       setSidebarOpen(false);

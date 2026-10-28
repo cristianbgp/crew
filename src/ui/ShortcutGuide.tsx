@@ -14,7 +14,7 @@ const sections = [
       ["Ctrl+K", "Search commands & services", "Workspace"],
       ["Ctrl+Shift+P", "Open command palette", "Workspace"],
       ["F2", "Switch service", "Workspace"],
-      ["F4", "Search logs", "Workspace"],
+      ["Ctrl+F / F4", "Search logs", "Workspace"],
       ["F6 / Shift+F6", "Next / previous focus area", "Workspace"],
       ["Ctrl+Shift+C", "Copy selection or screen", "Terminal"],
       ["F1", "Show / hide shortcuts", "Everywhere"],
@@ -56,6 +56,8 @@ const sections = [
   [
     "Output inspector",
     [
+      ["Enter / Shift+Enter", "Next / previous match", "Logs search"],
+      ["Ctrl+F", "Focus log search", "Logs only"],
       ["Ctrl+P", "Pause / resume output view", "Logs only"],
       ["Ctrl+End", "Follow latest output", "Logs only"],
       ["↑↓ / PgUp / PgDn", "Browse captured output", "Logs only"],

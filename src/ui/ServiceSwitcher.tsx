@@ -98,7 +98,7 @@ export function ServiceSwitcher({
         paddingLeft={1}
         paddingRight={1}
       >
-        <text fg={c.accent} flexShrink={0}>
+        <text fg={c.accent} height={1} flexShrink={0} wrapMode="none" truncate>
           <b>{items ? "Commands" : "Switch service"}</b>
         </text>
         <input
@@ -119,13 +119,22 @@ export function ServiceSwitcher({
           }}
           {...inputTheme(c)}
         />
-        <scrollbox ref={list} flexGrow={1} minHeight={1}>
+        <scrollbox
+          ref={list}
+          flexGrow={1}
+          minHeight={1}
+          marginTop={1}
+          marginBottom={1}
+        >
           {matches.length ? (
             matches.map((service, i) => (
               <box
                 id={`switch-result-${i}`}
                 key={service.id}
                 height={2}
+                marginBottom={1}
+                paddingLeft={1}
+                paddingRight={1}
                 flexShrink={0}
                 flexDirection="column"
                 backgroundColor={i === index ? c.selected : undefined}
@@ -143,7 +152,13 @@ export function ServiceSwitcher({
                     {service.label}
                   </text>
                   {service.shortcut ? (
-                    <text fg={c.accent} flexShrink={0}>
+                    <text
+                      fg={c.accent}
+                      height={1}
+                      flexShrink={0}
+                      wrapMode="none"
+                      truncate
+                    >
                       {service.shortcut}
                     </text>
                   ) : null}
@@ -157,9 +172,25 @@ export function ServiceSwitcher({
             <text fg={c.muted}>No matches.</text>
           )}
         </scrollbox>
-        <box height={1} flexShrink={0} justifyContent="space-between">
+        <box
+          height={1}
+          flexShrink={0}
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
+          gap={1}
+        >
           {width >= 54 ? (
-            <text fg={c.muted}>↑↓ Choose · Enter Open</text>
+            <text
+              fg={c.muted}
+              height={1}
+              minWidth={0}
+              flexShrink={1}
+              wrapMode="none"
+              truncate
+            >
+              ↑↓ Choose · Enter Open
+            </text>
           ) : null}
           <Button quiet label="Close · Esc" onPress={onClose} />
         </box>

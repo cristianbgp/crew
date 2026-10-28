@@ -15,24 +15,24 @@ Run your frontend, API, workers, and other development services in one terminal 
 
 ## Install and try
 
-Early preview. These instructions describe **0.2.0**, with self-contained executables for macOS and Linux (glibc), on ARM64 and x64. **0.1.x requires Bun**. The commands below require a published 0.2.0 release; a source checkout or CI artifact does not itself publish a package.
+Early preview. These instructions describe **0.2.1**, with self-contained executables for macOS and Linux (glibc), on ARM64 and x64. **0.1.x requires Bun**. The commands below require a published 0.2.1 release; a source checkout or CI artifact does not itself publish a package.
 
 Install the preview globally, then try the bundled demo:
 
 ```sh
-npm install -g @cristianbgp/crew@0.2.0
+npm install -g @cristianbgp/crew@0.2.1
 crew demo
 ```
 
 Or try it without a global install:
 
 ```sh
-npx --package @cristianbgp/crew@0.2.0 crew demo
+npx --package @cristianbgp/crew@0.2.1 crew demo
 ```
 
 The npm launcher needs **Node.js 22 or later**. It selects a matching native executable; Bun and mprocs are not required. Bun can also install the same package. Keep optional dependencies enabled: they contain the executable.
 
-For a project dependency, run `npm install --save-dev @cristianbgp/crew@0.2.0` and add a script:
+For a project dependency, run `npm install --save-dev @cristianbgp/crew@0.2.1` and add a script:
 
 ```json
 { "scripts": { "dev:all": "crew" } }
@@ -100,7 +100,7 @@ For dependencies, readiness checks, environment setup, group actions, diagnostic
 | ------------------------------------------- | ---------------------- |
 | Search services and commands                | Ctrl+K or Ctrl+Shift+P |
 | Switch service                              | F2                     |
-| Search captured output                      | F4                     |
+| Search captured output                      | Ctrl+F / F4            |
 | Move between terminal, sidebar, and toolbar | F6 / Shift+F6          |
 | Search all keyboard shortcuts               | F1                     |
 | Quit and stop services                      | Ctrl+Q                 |
@@ -117,7 +117,7 @@ crew is an early local-development tool. It has interactive terminals, startup d
 
 Commands in a workspace run with your user permissions and inherited environment. Review a shared `crew.toml` before launching it. Closing crew allows five seconds for graceful shutdown before forcing remaining owned processes to exit. Deliberately detached processes and forcibly killing crew itself can prevent normal cleanup.
 
-Version 0.2.0 provides standalone executables and an npm launcher requiring Node.js 22+. Earlier 0.1.x previews require Bun. Homebrew remains future work. See [Distribution](docs/distribution.md).
+Version 0.2.1 provides standalone executables and an npm launcher requiring Node.js 22+. Earlier 0.1.x previews require Bun. Homebrew remains future work. See [Distribution](docs/distribution.md).
 
 ## Contribute
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { stripVTControlCharacters } from "node:util";
 import {
   useKeyboard,
@@ -6,11 +6,13 @@ import {
   useTerminalDimensions,
 } from "@opentui/react";
 import type { ScrollBoxRenderable } from "@opentui/core";
+import { stringWidth } from "bun";
 import type { ProcessManager } from "../process/manager";
 import { Button } from "./Button";
 import { moveFocus } from "./focus";
 import { useTheme } from "./theme";
 import { inputTheme } from "./inputTheme";
+import { findLogMatches, formatLogOutput } from "./log-search";
 export function LogInspector({
   id,
   manager,
@@ -29,6 +31,9 @@ export function LogInspector({
       .slice(-5000);
   const [lines, setLines] = useState(decode);
   const [query, setQuery] = useState("");
+  const currentQuery = useRef("");
+  const [active, setActive] = useState(0);
+  const matches = useMemo(() => findLogMatches(lines, query), [lines, query]);
   const [paused, setPaused] = useState(false);
   const [following, setFollowing] = useState(true);
   const list = useRef<ScrollBoxRenderable | null>(null);
@@ -50,9 +55,37 @@ export function LogInspector({
       clearInterval(timer);
     };
   }, [manager, id, paused]);
+  function search(value: string) {
+    // Controlled input updates also emit onInput; only user edits pause output.
+    if (value === currentQuery.current) return;
+    currentQuery.current = value;
+    setQuery(value);
+    setActive(0);
+    setPaused(true);
+    setFollowing(false);
+  }
+  function navigate(delta: number) {
+    if (matches.length) {
+      setActive((index) => (index + delta + matches.length) % matches.length);
+    }
+  }
+  useEffect(() => {
+    const match = matches[active];
+    if (match)
+      list.current?.scrollTo({
+        y: Math.max(0, match.line - 2),
+        x: Math.max(
+          0,
+          stringWidth(
+            `${match.line + 1}  ${lines[match.line]!.slice(0, match.start)}`,
+          ) - 5,
+        ),
+      });
+  }, [matches, active, width, height]);
   function latest() {
     setPaused(false);
     setFollowing(true);
+    currentQuery.current = "";
     setQuery("");
     setLines(decode());
     dirty.current = false;
@@ -60,7 +93,7 @@ export function LogInspector({
   useEffect(() => {
     if (following && !query) {
       const timer = setTimeout(() => {
-        list.current?.scrollTo(list.current.scrollHeight);
+        list.current?.scrollTo({ x: 0, y: list.current.scrollHeight });
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -70,6 +103,21 @@ export function LogInspector({
       key.preventDefault();
       key.stopPropagation();
       onClose();
+      return;
+    }
+    if (key.ctrl && key.name === "f") {
+      key.preventDefault();
+      key.stopPropagation();
+      renderer.root.findDescendantById("log-search")?.focus();
+      return;
+    }
+    if (
+      key.name === "return" &&
+      renderer.currentFocusedRenderable?.id === "log-search"
+    ) {
+      key.preventDefault();
+      key.stopPropagation();
+      navigate(key.shift ? -1 : 1);
       return;
     }
     if (key.name === "tab") {
@@ -85,7 +133,8 @@ export function LogInspector({
     if (key.ctrl && key.name === "p") {
       key.preventDefault();
       key.stopPropagation();
-      setPaused((v) => !v);
+      if (paused) latest();
+      else setPaused(true);
       return;
     }
     if (key.ctrl && key.name === "end") {
@@ -104,11 +153,10 @@ export function LogInspector({
       );
     }
   });
-  const matches = lines
-    .map((text, index) => ({ text, index }))
-    .filter(
-      (line) => !query || line.text.toLowerCase().includes(query.toLowerCase()),
-    );
+  const output = useMemo(
+    () => formatLogOutput(lines, matches, active, c),
+    [lines, matches, active, c],
+  );
   return (
     <box
       position="absolute"
@@ -141,12 +189,13 @@ export function LogInspector({
           id="log-search"
           focused
           value={query}
-          placeholder="Filter captured output…"
-          onInput={setQuery}
+          placeholder="Find in captured output…"
+          onInput={search}
           {...inputTheme(c)}
         />
         <scrollbox
           ref={list}
+          scrollX
           flexGrow={1}
           minHeight={1}
           stickyScroll={following && !query}
@@ -155,29 +204,63 @@ export function LogInspector({
             if (event.scroll?.direction === "up") setFollowing(false);
           }}
         >
-          <text fg={c.text} selectable>
-            {matches.length
-              ? matches
-                  .map((line) => `${line.index + 1}  ${line.text}`)
-                  .join("\n")
-              : query
-                ? "No matches."
-                : "No output yet."}
-          </text>
+          <text
+            id="log-output"
+            fg={c.text}
+            selectable
+            wrapMode="none"
+            width={lines.some(Boolean) ? output.columns : 14}
+            flexShrink={0}
+            content={lines.some(Boolean) ? output.text : "No output yet."}
+          />
         </scrollbox>
         <text fg={c.muted} height={1} flexShrink={0} wrapMode="none" truncate>
-          {matches.length} lines · last 5,000 lines / 1 MiB
+          {query
+            ? matches.length
+              ? `${active + 1} of ${matches.length} · Enter / Shift+Enter`
+              : "No matches."
+            : `${lines.length} lines · last 5,000 lines / 1 MiB`}
         </text>
-        <box height={1} flexShrink={0} flexDirection="row" gap={1}>
+        <box
+          height={1}
+          flexShrink={0}
+          flexDirection="row"
+          gap={width < 60 ? 0 : 1}
+        >
+          {query ? (
+            <>
+              <Button
+                label="↑"
+                id="log-previous"
+                paddingX={1}
+                disabled={!matches.length}
+                onPress={() => navigate(-1)}
+              />
+              <Button
+                label="↓"
+                id="log-next"
+                paddingX={1}
+                disabled={!matches.length}
+                onPress={() => navigate(1)}
+              />
+            </>
+          ) : null}
           <Button
             label={`${paused ? "Resume" : "Pause"}${width >= 72 ? " Ctrl+P" : ""}`}
-            onPress={() => setPaused((v) => !v)}
+            onPress={() => {
+              if (paused) latest();
+              else setPaused(true);
+            }}
           />
           <Button
             label={width >= 72 ? "Latest Ctrl+End" : "Latest"}
             onPress={latest}
           />
-          <Button quiet label="Close · Esc" onPress={onClose} />
+          <Button
+            quiet
+            label={width < 60 ? "Esc" : "Close · Esc"}
+            onPress={onClose}
+          />
         </box>
       </box>
     </box>

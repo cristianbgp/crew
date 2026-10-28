@@ -44,7 +44,7 @@ test("F2 searches services and Enter switches back to terminal input", async () 
     });
   }
 });
-test("Logs filters output, pauses without stopping the process and resumes at latest", async () => {
+test("Logs searches with context, freezes output and resumes at latest", async () => {
   const manager = createProcessManager(services, { stopTimeoutMs: 50 });
   const t = await testRender(
     <App
@@ -67,14 +67,15 @@ test("Logs filters output, pauses without stopping the process and resumes at la
     });
     await t.renderOnce();
     expect(t.captureCharFrame()).toContain("beta");
-    expect(t.captureCharFrame()).not.toContain("alpha");
+    expect(t.captureCharFrame()).toContain("alpha");
+    expect(t.captureCharFrame()).toContain("1 of 1");
+    expect(t.captureCharFrame()).toContain("paused");
     const search = t.renderer.root.findDescendantById("log-search")!;
     await act(async () => {
       await t.mockMouse.click(search.x + 1, search.y);
       t.mockInput.pressKey("a", { ctrl: true });
       t.mockInput.pressBackspace();
     });
-    await clickText(t, "Pause");
     await act(async () => {
       manager.write("web", new TextEncoder().encode("new-output\n"));
       await waitFor(() => history().includes("new-output"));
@@ -95,6 +96,67 @@ test("Logs filters output, pauses without stopping the process and resumes at la
     await t.renderOnce();
     expect(t.captureCharFrame()).toContain("new-output");
     expect(manager.getSnapshot()[0]!.state).toBe("running");
+    await escape(t);
+    expect(t.renderer.root.findDescendantById("terminal-web")!.focused).toBe(
+      true,
+    );
+  } finally {
+    await act(async () => {
+      await manager.shutdown();
+      await t.dispose();
+    });
+  }
+});
+
+test("Ctrl+F searches occurrences, wraps navigation and restores terminal focus", async () => {
+  const manager = createProcessManager(services, { stopTimeoutMs: 50 });
+  const t = await testRender(
+    <App
+      config={{ name: "Demo", services }}
+      manager={manager}
+      onQuit={() => {}}
+    />,
+    { width: 40, height: 12 },
+  );
+  try {
+    await act(async () => {
+      await manager.start("web");
+      await waitFor(() =>
+        new TextDecoder().decode(manager.history("web")).includes("beta"),
+      );
+      t.mockInput.pressKey("f", { ctrl: true });
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("Search output");
+    await act(async () => {
+      await t.mockInput.typeText("a");
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("1 of 3");
+    expect(t.captureCharFrame()).toContain("alpha");
+    expect(t.captureCharFrame()).toContain("beta");
+    await act(async () => {
+      t.mockInput.pressEnter();
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("2 of 3");
+    await act(async () => {
+      t.mockInput.pressKey("\x1b[13;2u");
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("1 of 3");
+    await act(async () => {
+      t.mockInput.pressKey("\x1b[13;2u");
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("3 of 3");
+    await clickText(t, "Latest");
+    await act(async () => {
+      await Bun.sleep(40);
+    });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("following");
+    expect(t.captureCharFrame()).not.toContain("Resume");
     await escape(t);
     expect(t.renderer.root.findDescendantById("terminal-web")!.focused).toBe(
       true,

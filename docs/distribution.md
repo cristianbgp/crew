@@ -2,24 +2,24 @@
 
 crew opens a terminal workspace with `crew` or `crew dev`. It needs no activation or background daemon. Package name: `@cristianbgp/crew`; command: `crew`.
 
-These instructions describe **0.2.0**. Earlier **0.1.x versions require Bun**. Installation requires a published 0.2.0 release. Preparing artifacts does not publish packages or create a GitHub Release.
+These instructions describe **0.2.1**. Earlier **0.1.x versions require Bun**. Installation requires a published 0.2.1 release. Preparing artifacts does not publish packages or create a GitHub Release.
 
 ## npm installation
 
 ```sh
-npm install -g @cristianbgp/crew@0.2.0
+npm install -g @cristianbgp/crew@0.2.1
 crew demo
 ```
 
 The launcher requires Node.js **22 or later** and selects one exact-version optional platform package. Keep optional dependencies enabled. There is no postinstall download or compilation step. No separately installed Bun or mprocs is needed: the executable embeds its runtime and terminal libraries.
 
 ```sh
-npm install --save-dev @cristianbgp/crew@0.2.0
+npm install --save-dev @cristianbgp/crew@0.2.1
 # package.json: { "scripts": { "dev:all": "crew" } }
 npm run dev:all
 ```
 
-One-off: `npx --package @cristianbgp/crew@0.2.0 crew demo`. Bun users can use `bun install -g @cristianbgp/crew@0.2.0` or `bunx --package @cristianbgp/crew@0.2.0 crew demo`.
+One-off: `npx --package @cristianbgp/crew@0.2.1 crew demo`. Bun users can use `bun install -g @cristianbgp/crew@0.2.1` or `bunx --package @cristianbgp/crew@0.2.1 crew demo`.
 
 Service commands still require their own tools: `bun run dev` requires Bun for that service. Each command runs from its configured `cwd`; exported terminal variables are preserved. The launch directory's dotenv files are not automatically imported. Each service/framework loads its own env files.
 
@@ -39,7 +39,7 @@ These are tested environments, not claims about older OS/glibc versions or every
 Verify the downloaded tarball's SHA-256 against `platformTarballSha256` in the accompanying platform JSON with `shasum -a 256` on macOS or `sha256sum` on Linux. Then, for example:
 
 ```sh
-tar -xzf cristianbgp-crew-darwin-arm64-0.2.0.tgz
+tar -xzf cristianbgp-crew-darwin-arm64-0.2.1.tgz
 mkdir -p "$HOME/.local/bin"
 install -m 755 package/bin/crew "$HOME/.local/bin/crew"
 # Ensure $HOME/.local/bin is in PATH.

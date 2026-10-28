@@ -200,9 +200,8 @@ try {
   p.terminal!.write("\x1bOS");
   await until(() => frame().includes("Search output"), "output inspector");
   p.terminal!.write("compact40");
-  await until(() => frame().includes("compact40"), "filtered output");
-  await clickText("Pause");
-  await until(() => frame().includes("Resume"), "pause output view");
+  await until(() => frame().includes("compact40"), "searched output");
+  await until(() => frame().includes("Resume"), "search pauses output view");
   await clickText("Latest");
   await until(() => frame().includes("Pause"), "follow latest output");
   p.terminal!.write("\x1b");
