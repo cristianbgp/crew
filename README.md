@@ -94,6 +94,8 @@ Run each service normally once to install dependencies and complete any initial 
 
 For dependencies, readiness checks, environment setup, group actions, diagnostics, and configuration editing, see [Configuration and usage](docs/configuration.md).
 
+**Using an AI coding assistant?** The optional [crew skill](https://github.com/cristianbgp/agent-skills/tree/main/skills/crew) helps your agent configure `crew.toml`, set up startup dependencies and troubleshoot services.
+
 ## Find your way around
 
 | Action                                      | Shortcut               |
