@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 — 2026-11-07
 
 ### Log search
 
@@ -32,4 +32,4 @@
 - Restrict preview connections to loopback/same-origin sessions, bound output queues, and clean up processes on restart, disconnect and shutdown.
 - Add regressions for search, recovery, navigation and preview lifecycle; update usage and contributor documentation.
 
-Release preparation still requires a new version and a successful full four-platform CI run for the intended release commit before publication. The preview remains development tooling; published runtime packages continue to use the native terminal.
+Publication requires a successful full four-platform CI run for the intended release commit and validation of its exact artifacts. The preview remains development tooling; published runtime packages continue to use the native terminal.
