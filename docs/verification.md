@@ -4,7 +4,7 @@
 
 The 0.2.2 candidate uses Bun 1.4.0 for builds and source development, and Node 22+ for the npm launcher. Direct executables embed their runtime. OpenTUI provides the embedded terminal; `@xterm/headless` independently observes it in development tests.
 
-Routine CI runs the source suite once on Ubuntu 24.04 and native smoke on macOS 14 ARM64. The manually requested full-release matrix additionally runs macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
+Routine CI runs the source suite once on Ubuntu 24.04 and native smoke on macOS 15 ARM64. The manually requested full-release matrix additionally runs macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
 
 Windows, Alpine/musl, older OS/glibc releases, every terminal emulator and remote clipboard behavior are not established by this matrix. A terminal protocol check does not establish a manual visual review in Warp.
 

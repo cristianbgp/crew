@@ -41,7 +41,7 @@ jobs:
     name: native smoke (macOS ARM64)
     needs: checks
     if: ${{ !inputs.full_release }}
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -65,7 +65,7 @@ jobs:
       matrix:
         include:
           - target: darwin-arm64
-            runner: macos-14
+            runner: macos-15
           - target: darwin-x64
             runner: macos-15-intel
           - target: linux-arm64

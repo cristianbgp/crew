@@ -28,6 +28,7 @@
 
 ### Development and verification
 
+- Move macOS ARM64 CI to the supported macOS 15 runner after GitHub retired macOS 14.
 - Add a local xterm.js preview of the real CLI through a PTY, with demo sessions, responsive size presets and an optional explicit workspace.
 - Restrict preview connections to loopback/same-origin sessions, bound output queues, and clean up processes on restart, disconnect and shutdown.
 - Add regressions for search, recovery, navigation and preview lifecycle; update usage and contributor documentation.

@@ -4,7 +4,7 @@ export const platforms = [
     os: "darwin",
     cpu: "arm64",
     target: "bun-darwin-arm64",
-    runner: "macos-14",
+    runner: "macos-15",
     packageName: "@cristianbgp/crew-darwin-arm64",
   },
   {

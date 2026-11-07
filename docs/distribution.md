@@ -29,7 +29,7 @@ Platform tarballs contain the standalone executable and its licenses. Download t
 
 | Platform suffix | Target             | Native CI environment |
 | --------------- | ------------------ | --------------------- |
-| `darwin-arm64`  | Apple Silicon Mac  | macOS 14              |
+| `darwin-arm64`  | Apple Silicon Mac  | macOS 15              |
 | `darwin-x64`    | Intel Mac          | macOS 15 Intel        |
 | `linux-arm64`   | Linux ARM64, glibc | Ubuntu 24.04 ARM64    |
 | `linux-x64`     | Linux x64, glibc   | Ubuntu 24.04 x64      |
