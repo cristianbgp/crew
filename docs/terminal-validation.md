@@ -1,6 +1,8 @@
 # crew terminal integration
 
-crew uses OpenTUI 0.6.6's `EmbeddedTerminalRenderable` and Bun 1.4.0's PTY support. The native component already handles emulation, screen buffers, keyboard encoding, paste, scrollback, selection and mouse input. A separate xterm renderer is unnecessary. `@xterm/headless` is only a development dependency for the outer terminal in end-to-end tests.
+crew uses OpenTUI 0.6.6's `EmbeddedTerminalRenderable` and Bun 1.4.0's PTY support. The native component already handles emulation, screen buffers, keyboard encoding, paste, scrollback, selection and mouse input. It does not need a separate xterm renderer. `@xterm/headless` is only a development dependency for the outer terminal in end-to-end tests.
+
+The optional `bun run --no-env-file preview` development tool uses `@xterm/xterm` as the **outer** browser terminal around the real CLI PTY. It does not replace the embedded terminal for any service. See [Browser terminal preview](../CONTRIBUTING.md#browser-terminal-preview). `tests/preview.test.ts` covers the local WebSocket boundary, real CLI input/output, resize, exit reporting and process cleanup on disconnect and server shutdown.
 
 The service output is parsed synchronously by the native component. Only its selected panel is visible; hidden panels retain their screens. Rendering is limited to 30 fps, scrollback to 10,000 lines and pre-attachment replay to 1 MiB per process. There is no unbounded JavaScript parser queue.
 

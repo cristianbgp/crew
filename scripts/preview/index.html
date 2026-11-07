@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>crew · Terminal preview</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./client.ts"></script>
+  </head>
+  <body>
+    <header>
+      <div class="identity">
+        <strong>crew<span> / </span>terminal preview</strong
+        ><span class="caption">Real CLI · xterm.js</span>
+      </div>
+      <div class="connection">
+        <span id="status" role="status">Connecting…</span
+        ><button id="restart" type="button">Restart session</button>
+      </div>
+    </header>
+    <main>
+      <div class="toolbar" aria-label="Preview controls">
+        <label
+          >Terminal size
+          <select id="size" aria-label="Terminal size">
+            <option value="auto">Fit window</option>
+            <option value="110x34">110 × 34</option>
+            <option value="80x24">80 × 24</option>
+            <option value="40x12">40 × 12</option>
+          </select></label
+        >
+        <output
+          id="dimensions"
+          aria-label="Current terminal dimensions"
+        ></output>
+        <div class="shortcuts">
+          <button type="button" data-key="help">F1 Help</button
+          ><button type="button" data-key="switch">F2 Services</button
+          ><button type="button" data-key="logs">F4 Logs</button
+          ><button type="button" data-key="quit">Quit crew</button>
+        </div>
+      </div>
+      <section id="viewport" aria-label="crew terminal preview">
+        <div id="terminal"></div>
+      </section>
+    </main>
+    <footer>
+      Click the terminal to type. Browser shortcuts stay with the browser; use
+      the buttons above for crew shortcuts. Restart begins a fresh session.
+    </footer>
+  </body>
+</html>

@@ -9,6 +9,7 @@ export function Button({
   danger = false,
   quiet = false,
   secondary = false,
+  selected = false,
   paddingX = 1,
 }: {
   label: string;
@@ -18,11 +19,19 @@ export function Button({
   danger?: boolean;
   quiet?: boolean;
   secondary?: boolean;
+  selected?: boolean;
   paddingX?: number;
 }) {
   const c = useTheme();
-  const current = useRef({ disabled, danger, quiet, secondary, colors: c });
-  current.current = { disabled, danger, quiet, secondary, colors: c };
+  const current = useRef({
+    disabled,
+    danger,
+    quiet,
+    secondary,
+    selected,
+    colors: c,
+  });
+  current.current = { disabled, danger, quiet, secondary, selected, colors: c };
   const box = useRef<BoxRenderable | null>(null);
   const text = useRef<TextRenderable | null>(null);
   const hovered = useRef(false);
@@ -30,7 +39,14 @@ export function Button({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function paint() {
     if (!box.current || box.current.isDestroyed || !text.current) return;
-    const { disabled, danger, quiet, secondary, colors: c } = current.current;
+    const {
+      disabled,
+      danger,
+      quiet,
+      secondary,
+      selected,
+      colors: c,
+    } = current.current;
     box.current.backgroundColor = disabled
       ? c.panel
       : pressed.current
@@ -39,20 +55,24 @@ export function Button({
           ? c.focus
           : hovered.current
             ? c.hover
-            : quiet
-              ? "#00000000"
-              : secondary
-                ? c.sidebar
-                : c.line;
+            : selected
+              ? c.selected
+              : quiet
+                ? "#00000000"
+                : secondary
+                  ? c.sidebar
+                  : c.line;
     text.current.fg = disabled
       ? c.muted
       : pressed.current
         ? c.bg
         : danger
           ? c.danger
-          : quiet && !hovered.current && !box.current.focused
-            ? c.muted
-            : c.text;
+          : selected
+            ? c.accent
+            : quiet && !hovered.current && !box.current.focused
+              ? c.muted
+              : c.text;
   }
   useEffect(paint);
   useEffect(() => {
@@ -95,11 +115,13 @@ export function Button({
       backgroundColor={
         disabled
           ? c.panel
-          : quiet
-            ? "#00000000"
-            : secondary
-              ? c.sidebar
-              : c.line
+          : selected
+            ? c.selected
+            : quiet
+              ? "#00000000"
+              : secondary
+                ? c.sidebar
+                : c.line
       }
       onMouseOver={() => {
         hovered.current = true;
@@ -126,7 +148,17 @@ export function Button({
         minWidth={0}
         wrapMode="none"
         truncate
-        fg={disabled ? c.muted : danger ? c.danger : quiet ? c.muted : c.text}
+        fg={
+          disabled
+            ? c.muted
+            : danger
+              ? c.danger
+              : selected
+                ? c.accent
+                : quiet
+                  ? c.muted
+                  : c.text
+        }
       >
         {label}
       </text>

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ServiceSnapshot } from "../process/types";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { serviceStatus } from "./service-status";
 
 export function ServiceHeader({
   name,
@@ -25,34 +26,8 @@ export function ServiceHeader({
   children: ReactNode;
 }) {
   const c = useTheme();
-  const waiting = snapshot?.readiness === "waiting" || snapshot?.waitingFor;
-  const failure =
-    snapshot?.state === "error" || snapshot?.readiness === "failed";
-  const label = waiting
-    ? "waiting"
-    : snapshot?.readiness === "failed"
-      ? "unready"
-      : snapshot?.readiness === "ready" && snapshot.state === "running"
-        ? "ready"
-        : (snapshot?.state ?? "ready");
-  const mark = failure
-    ? "!"
-    : waiting ||
-        snapshot?.state === "starting" ||
-        snapshot?.state === "stopping"
-      ? "◌"
-      : snapshot?.state === "running"
-        ? "●"
-        : "○";
-  const statusColor = failure
-    ? c.danger
-    : waiting ||
-        snapshot?.state === "starting" ||
-        snapshot?.state === "stopping"
-      ? c.yellow
-      : snapshot?.state === "running"
-        ? c.accent
-        : c.muted;
+  const { label, mark, tone } = serviceStatus(snapshot);
+  const statusColor = c[tone];
   const titleWidth = Math.max(
     1,
     availableWidth -

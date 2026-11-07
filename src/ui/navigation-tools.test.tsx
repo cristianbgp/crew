@@ -76,6 +76,9 @@ test("Logs searches with context, freezes output and resumes at latest", async (
       t.mockInput.pressKey("a", { ctrl: true });
       t.mockInput.pressBackspace();
     });
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain("following");
+    await clickText(t, "Pause");
     await act(async () => {
       manager.write("web", new TextEncoder().encode("new-output\n"));
       await waitFor(() => history().includes("new-output"));

@@ -15,6 +15,24 @@ When running source files directly, use `bun --no-env-file src/entry.ts dev`. Wh
 
 ## Check changes
 
+### Browser terminal preview
+
+```sh
+bun run --no-env-file preview
+# Or run a workspace you explicitly choose:
+bun run --no-env-file preview --config /path/to/crew.toml
+```
+
+Open the printed `http://127.0.0.1:…` URL. The browser displays the actual CLI inside a PTY through xterm.js; it is not a recreation of the interface. Type and click in the terminal, use the size selector for automatic fitting or 110×34, 80×24 and 40×12 presets, and use the toolbar for shortcuts intercepted by the browser.
+
+The default is the disposable demo, with an independent session for each tab. Closing a tab stops its services; restarting begins a fresh session. Quit crew leaves its exit status visible until you restart. Ctrl+C in the server terminal stops all preview sessions and the HTTP server.
+
+With `--config`, service commands and configuration edits affect that real workspace. Avoid opening the same workspace in several tabs. The preview binds only to loopback and accepts token-authorized WebSockets from its own origin; it is local development tooling and should not be exposed through a public proxy.
+
+The preview uses a dark theme. Browser fonts, clipboard behavior and intercepted shortcuts can differ from native terminals. Keep the native terminal smoke tests as well as visual browser checks.
+
+### Automated checks
+
 ```sh
 bun run check          # Oxlint, Oxfmt, TypeScript, and tests
 bun run test:terminal  # Real CLI, PTYs, keyboard/mouse flows, and cleanup

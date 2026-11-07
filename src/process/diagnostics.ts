@@ -67,6 +67,68 @@ export function describeService(
     "Output: retained tail only, up to 1 MiB; earlier output may be unavailable.",
   ].join("\n");
 }
+
+export type DiagnosticSection = { title: string; lines: string[] };
+
+/** Local presentation is separate from the stable ISO timestamps in exported logs. */
+export function describeServiceSections(
+  service: ServiceDefinition,
+  snapshot: ServiceSnapshot | undefined,
+  now = Date.now(),
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+): DiagnosticSection[] {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "long",
+    timeZone,
+  });
+  const timestamp = (value: number | undefined) =>
+    value === undefined ? "—" : formatter.format(value);
+  const duration =
+    snapshot?.startedAt === undefined
+      ? "—"
+      : `${(Math.max(0, (snapshot.endedAt ?? now) - snapshot.startedAt) / 1000).toFixed(1)}s`;
+  return [
+    {
+      title: "Overview",
+      lines: [
+        `Service: ${service.id}`,
+        `Group: ${service.repo}`,
+        `State: ${snapshot?.state ?? "stopped"}`,
+        `Readiness: ${snapshot?.readiness ?? "not configured"}`,
+        ...(snapshot?.waitingFor
+          ? [`Waiting for: ${snapshot.waitingFor}`]
+          : []),
+        ...(snapshot?.error ? [`Failure: ${snapshot.error}`] : []),
+      ],
+    },
+    {
+      title: `Process · ${timeZone}`,
+      lines: [
+        `PID: ${snapshot?.pid ?? "—"}`,
+        `Started: ${timestamp(snapshot?.startedAt)}`,
+        `Ended: ${timestamp(snapshot?.endedAt)}`,
+        `Duration: ${duration}`,
+        `Exit code: ${snapshot?.exitCode ?? "—"}`,
+      ],
+    },
+    {
+      title: "Configuration",
+      lines: [
+        `Command: ${snapshot?.runningCommand ?? service.command}`,
+        `Directory: ${snapshot?.runningCwd ?? service.cwd}`,
+        `Dependencies: ${(snapshot?.runningDependsOn ?? service.dependsOn)?.join(", ") || "none"}`,
+      ],
+    },
+    {
+      title: "Output",
+      lines: [
+        "Retained tail only, up to 1 MiB.",
+        "Earlier output may be unavailable.",
+      ],
+    },
+  ];
+}
 export async function exportLogs(
   service: ServiceDefinition,
   snapshot: ServiceSnapshot | undefined,

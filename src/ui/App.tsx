@@ -2,7 +2,11 @@ import { ShortcutHelpContext } from "./KeyboardShortcuts";
 import { ServiceHeader } from "./ServiceHeader";
 import { useServiceUrls } from "./useServiceUrls";
 import type { WorkspaceState } from "../state/workspace";
-import { describeService, exportLogs, openUrl } from "../process/diagnostics";
+import {
+  describeServiceSections,
+  exportLogs,
+  openUrl,
+} from "../process/diagnostics";
 import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import type { PaletteItem } from "./ServiceSwitcher";
 import { createCrewClipboard, type ClipboardWriter } from "./clipboard";
@@ -250,6 +254,14 @@ export function App({
   };
   function select(id: string) {
     setSelected(id);
+    const repo = config.services.find((s) => s.id === id)?.repo;
+    if (repo)
+      setCollapsed((previous) => {
+        if (!previous.has(repo)) return previous;
+        const next = new Set(previous);
+        next.delete(repo);
+        return next;
+      });
     setTerminalFocus(true);
     setSidebarOpen(false);
     queueMicrotask(() =>
@@ -342,36 +354,6 @@ export function App({
       });
   }
   const commandItems: PaletteItem[] = [
-    {
-      id: "switch-service",
-      label: "Switch service",
-      detail: "Find by name, repository or command",
-      shortcut: "F2",
-      run: openSwitcher,
-    },
-    ...(openHelp
-      ? [
-          {
-            id: "shortcuts",
-            label: "Keyboard shortcuts",
-            detail: "Search keys, actions and scopes",
-            shortcut: "F1",
-            run: () => {
-              setPaletteQuery(null);
-              openHelp();
-            },
-          },
-        ]
-      : []),
-    ...config.services.map((s) => ({
-      id: `switch:${s.id}`,
-      label: `Switch to ${s.id}`,
-      detail: s.repo,
-      run: () => {
-        setPaletteQuery(null);
-        select(s.id);
-      },
-    })),
     ...(service
       ? [
           ...(["start", "stop", "restart"] as const)
@@ -383,7 +365,7 @@ export function App({
             .map((kind) => ({
               id: kind,
               label: `${kind[0]!.toUpperCase()}${kind.slice(1)} service`,
-              detail: service.id,
+              detail: `${service.repo} · ${service.id}`,
               run: () => {
                 setPaletteQuery(null);
                 act(kind);
@@ -393,7 +375,7 @@ export function App({
             id: "logs",
             label: "Search logs",
             shortcut: "F4",
-            detail: service.id,
+            detail: `${service.repo} · ${service.id}`,
             run: () => {
               setPaletteQuery(null);
               setLogsOpen(true);
@@ -402,7 +384,7 @@ export function App({
           {
             id: "diagnostics",
             label: "Diagnostics",
-            detail: service.id,
+            detail: `${service.repo} · ${service.id}`,
             run: () => {
               setPaletteQuery(null);
               setDiagnostics(true);
@@ -411,7 +393,7 @@ export function App({
           {
             id: "export",
             label: "Export logs",
-            detail: service.id,
+            detail: `${service.repo} · ${service.id}`,
             run: () => {
               setPaletteQuery(null);
               setDiagnostics(true);
@@ -430,7 +412,7 @@ export function App({
           {
             id: "edit",
             label: "Edit service",
-            detail: service.id,
+            detail: `${service.repo} · ${service.id}`,
             run: () => {
               setPaletteQuery(null);
               setTerminalFocus(false);
@@ -470,6 +452,37 @@ export function App({
           ]),
         ]
       : []),
+    {
+      id: "switch-service",
+      label: "Switch service",
+      detail: "Find by name, group or command",
+      shortcut: "F2",
+      run: openSwitcher,
+    },
+    ...(openHelp
+      ? [
+          {
+            id: "shortcuts",
+            label: "Keyboard shortcuts",
+            detail: "Search keys, actions and scopes",
+            shortcut: "F1",
+            run: () => {
+              setPaletteQuery(null);
+              openHelp();
+            },
+          },
+        ]
+      : []),
+    ...config.services.map((s) => ({
+      id: `switch:${s.id}`,
+      label: `Switch to ${s.id}`,
+      detail: s.repo,
+      shortcut: s.id === selected ? "Current" : undefined,
+      run: () => {
+        setPaletteQuery(null);
+        select(s.id);
+      },
+    })),
     ...(!groupBusy.current
       ? [...new Set(config.services.map((s) => s.repo))].flatMap((repo) =>
           (["start", "stop", "restart"] as const).map((kind) => ({
@@ -707,6 +720,25 @@ export function App({
                 }}
               />
             ))}
+            {service &&
+            snapshot?.state === "stopped" &&
+            !manager.history(service.id).byteLength ? (
+              <box
+                position="absolute"
+                width="100%"
+                height="100%"
+                padding={compact ? 1 : 2}
+                flexDirection="column"
+                justifyContent="center"
+                gap={1}
+              >
+                <text fg={c.text}>No output yet.</text>
+                <text fg={c.muted}>Start {service.id} to run its command.</text>
+                <box height={1}>
+                  <Button label="Start service" onPress={() => act("start")} />
+                </box>
+              </box>
+            ) : null}
             {!service ? (
               <box flexDirection="column" padding={2} gap={1}>
                 <text fg={c.text}>Your services, one workspace.</text>
@@ -733,7 +765,11 @@ export function App({
           height="100%"
           onMouseDown={() => setSidebarOpen(false)}
         >
-          <box height="100%" onMouseDown={(event) => event.stopPropagation()}>
+          <box
+            width="100%"
+            height="100%"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <Sidebar
               collapsed={collapsed}
               onCollapsedChange={setCollapsed}
@@ -793,6 +829,7 @@ export function App({
       {switcherOpen && !dialog ? (
         <ServiceSwitcher
           config={config}
+          selectedId={selected}
           snapshots={snapshots}
           onSelect={(id) => {
             setSwitcherOpen(false);
@@ -813,10 +850,8 @@ export function App({
       ) : null}
       {diagnostics && service && !dialog ? (
         <DiagnosticsPanel
-          text={
-            (exportMessage ? exportMessage + "\n\n" : "") +
-            describeService(service, snapshot)
-          }
+          text={exportMessage}
+          sections={describeServiceSections(service, snapshot)}
           onExport={() =>
             exportLogs(service, snapshot, manager.history(service.id))
           }

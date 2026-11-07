@@ -112,7 +112,9 @@ export function SetupWizard({
               Add services from this repo or other local folders.
             </text>
             <text fg={c.muted} flexShrink={0}>
-              Commands run only after you choose Save & start.
+              {services.length
+                ? "Commands run only after you choose Save & start."
+                : "Add services now, or create an empty workspace."}
             </text>
             <box height={1} flexShrink={0} />
           </>
@@ -214,7 +216,13 @@ export function SetupWizard({
         <box flexDirection="row" gap={1} height={1} flexShrink={0}>
           <Button
             id="setup-save"
-            label={busy ? "Saving…" : "Save & start"}
+            label={
+              busy
+                ? "Saving…"
+                : services.length
+                  ? "Save & start"
+                  : "Create workspace"
+            }
             disabled={busy}
             onPress={() => void save()}
           />

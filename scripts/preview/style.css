@@ -1,0 +1,147 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  color: #dce2ed;
+  background: #111318;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  border-bottom: 1px solid #2c313b;
+}
+.identity {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+strong span,
+.caption,
+footer,
+output {
+  color: #929cab;
+}
+.caption,
+#status,
+button,
+select,
+label,
+output {
+  font-size: 12px;
+}
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#status[data-state="connected"] {
+  color: #98cba6;
+}
+#status[data-state="error"] {
+  color: #f0a19b;
+}
+button,
+select {
+  font: inherit;
+  color: inherit;
+  border: 1px solid #3b4350;
+  border-radius: 5px;
+  background: #1b2029;
+  padding: 7px 10px;
+}
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #a9c5ff;
+  outline-offset: 3px;
+}
+@media (hover: hover) {
+  button:hover {
+    background: #29313e;
+  }
+}
+main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 20px 0;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shortcuts {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid #343b48;
+  border-radius: 6px;
+  padding: 10px;
+  background: #111318;
+}
+#terminal {
+  width: 100%;
+  height: 100%;
+}
+.xterm {
+  height: 100%;
+}
+footer {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 10px 20px 14px;
+}
+@media (max-width: 700px) {
+  header {
+    padding: 12px;
+    align-items: flex-start;
+  }
+  .connection {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
+  }
+  main {
+    padding: 10px 10px 0;
+  }
+  .shortcuts {
+    margin-left: 0;
+  }
+  footer {
+    padding: 10px;
+  }
+}

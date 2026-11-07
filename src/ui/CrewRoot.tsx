@@ -11,7 +11,12 @@ import { SetupWizard } from "./SetupWizard";
 import { ServiceEditor } from "./ServiceEditor";
 import { Button } from "./Button";
 import { ThemeProvider, useTheme, type ThemePreference } from "./theme";
-import { loadConfig, createConfig, type ConfigDocument } from "../config/store";
+import {
+  loadConfig,
+  createConfig,
+  ConfigConflictError,
+  type ConfigDocument,
+} from "../config/store";
 import type { ProcessManager } from "../process/manager";
 import { applyServiceChange } from "./edit-service";
 import { useProcessSnapshots } from "./useProcessSnapshots";
@@ -68,6 +73,7 @@ function Workspace({
   }, [doc?.config.name, onWorkspaceNameChange]);
   const [editing, setEditing] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [removeConflict, setRemoveConflict] = useState(false);
   const [notice, setNoticeValue] = useState("");
   const [noticeError, setNoticeError] = useState(false);
   function setNotice(message: string, error = false) {
@@ -113,6 +119,7 @@ function Workspace({
     setDoc(next);
     setEditing(null);
     setRemoving(null);
+    setRemoveConflict(false);
     setNotice("Configuration reloaded");
   }
   if (!doc)
@@ -214,7 +221,7 @@ function Workspace({
         </scrollbox>
         <box
           flexDirection={width < 54 ? "column" : "row"}
-          height={width < 54 ? 3 : 1}
+          height={width < 54 ? (removeConflict ? 3 : 2) : 1}
           gap={width < 54 ? 0 : 1}
           flexShrink={0}
         >
@@ -234,7 +241,10 @@ function Workspace({
                   setDoc(next);
                   setRemoving(null);
                 })
-                .catch((e) => setNotice(String(e), true))
+                .catch((e) => {
+                  setRemoveConflict(e instanceof ConfigConflictError);
+                  setNotice(String(e), true);
+                })
                 .finally(() => setBusy(false));
             }}
           />
@@ -244,13 +254,15 @@ function Workspace({
             disabled={busy}
             onPress={() => setRemoving(null)}
           />
-          <Button
-            label="Reload file"
-            disabled={busy}
-            onPress={() =>
-              void reload().catch((e) => setNotice(String(e), true))
-            }
-          />
+          {removeConflict ? (
+            <Button
+              label="Reload file"
+              disabled={busy}
+              onPress={() =>
+                void reload().catch((e) => setNotice(String(e), true))
+              }
+            />
+          ) : null}
         </box>
       </box>
     ) : null;
@@ -271,6 +283,7 @@ function Workspace({
       }}
       onRemove={(id) => {
         setNotice("");
+        setRemoveConflict(false);
         setRemoving(id);
       }}
       dialog={dialog}

@@ -75,7 +75,7 @@ test("small service actions stay reachable through More without stealing Escape 
   );
   try {
     await click(t, "More");
-    expect(t.captureCharFrame()).toContain("sleep 30");
+    expect(t.captureCharFrame()).toContain("Command & directory");
     await click(t, "Edit");
     expect(edited).toBe("web");
     expect(t.captureCharFrame()).not.toContain("Service actions");
@@ -166,7 +166,7 @@ test("service form keeps Save and Cancel reachable at 40 by 12 even with validat
     await click(t, "Save service");
     expect(t.captureCharFrame()).toContain("Enter a service name");
     expect(t.captureCharFrame()).toContain("Cancel");
-    expect(t.captureCharFrame()).toContain("Reload file");
+    expect(t.captureCharFrame()).not.toContain("Reload file");
   } finally {
     await act(async () => {
       await t.dispose();
@@ -244,7 +244,7 @@ test("small setup shows its focused workspace field before explanatory content",
     });
     await t.renderOnce();
     expect(t.captureCharFrame()).toContain("My workspace");
-    expect(t.captureCharFrame()).toContain("Save & start");
+    expect(t.captureCharFrame()).toContain("Create workspace");
   } finally {
     await act(async () => {
       await t.dispose();
@@ -252,7 +252,7 @@ test("small setup shows its focused workspace field before explanatory content",
   }
 });
 
-test("small remove confirmation keeps Cancel and Reload reachable without changing the file", async () => {
+test("small remove confirmation keeps Cancel reachable without showing unnecessary recovery", async () => {
   const { mkdtemp, rm, readFile } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
@@ -278,7 +278,7 @@ test("small remove confirmation keeps Cancel and Reload reachable without changi
     await click(t, "More");
     await click(t, "Remove");
     expect(t.captureCharFrame()).toContain("Remove service");
-    expect(t.captureCharFrame()).toContain("Reload file");
+    expect(t.captureCharFrame()).not.toContain("Reload file");
     await click(t, "Cancel");
     expect(t.captureCharFrame()).not.toContain("Remove web?");
     expect(await readFile(doc.path, "utf8")).toBe(original);

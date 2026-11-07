@@ -1,4 +1,4 @@
-import { useFocusCursor } from "./focus";
+import { menuKey, useFocusCursor } from "./focus";
 import { useFormFeedback } from "./useFormFeedback";
 import { useState, useRef, useEffect } from "react";
 import type { ScrollBoxRenderable } from "@opentui/core";
@@ -14,6 +14,7 @@ import { discoverScripts } from "../setup/discover";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
 import { inputTheme } from "./inputTheme";
+import { ConfigConflictError } from "../config/store";
 export interface ServiceEditorProps {
   baseDir: string;
   initial?: ServiceDefinition;
@@ -47,6 +48,9 @@ export function ServiceEditor({
   const [error, setError] = useState("");
   useFormFeedback(error);
   const [busy, setBusy] = useState(false);
+  const [conflict, setConflict] = useState(false);
+  const [confirmReload, setConfirmReload] = useState(false);
+  const [reloadError, setReloadError] = useState("");
   const [scripts, setScripts] = useState<{ name: string; command: string }[]>(
     [],
   );
@@ -58,7 +62,7 @@ export function ServiceEditor({
     ...scripts.map((_, i) => "script-" + i),
     "service-save",
     "service-cancel",
-    ...(onReload ? ["service-reload"] : []),
+    ...(onReload && conflict ? ["service-reload"] : []),
   ];
   const stepFocus = useFocusCursor(targets, focus);
   useEffect(() => {
@@ -70,7 +74,29 @@ export function ServiceEditor({
       fields.current?.scrollChildIntoView("script-choices");
     renderer.root.findDescendantById(focus)?.focus();
   }, [focus, renderer, height, width, scripts.length, focusVersion]);
+  useEffect(() => {
+    if (confirmReload)
+      renderer.root.findDescendantById("service-keep-editing")?.focus();
+  }, [confirmReload, renderer]);
+  function keepEditing() {
+    setConfirmReload(false);
+    setFocus("service-reload");
+    setFocusVersion((value) => value + 1);
+  }
   useKeyboard((key) => {
+    if (confirmReload) {
+      if (key.name === "escape") {
+        key.preventDefault();
+        key.stopPropagation();
+        if (!busy) keepEditing();
+      } else
+        menuKey(
+          renderer.root.findDescendantById("service-reload-confirm"),
+          renderer.currentFocusedRenderable,
+          key,
+        );
+      return;
+    }
     if (
       key.name === "tab" ||
       (!renderer.currentFocusedRenderable?.id.startsWith("field-") &&
@@ -152,11 +178,67 @@ export function ServiceEditor({
         autostart,
       });
     } catch (e) {
+      if (e instanceof ConfigConflictError) setConflict(true);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
   }
+  if (confirmReload)
+    return (
+      <box
+        id="service-reload-confirm"
+        width="100%"
+        maxWidth={65}
+        height={Math.min(10, height - 1)}
+        border
+        borderColor={c.line}
+        backgroundColor={c.sidebar}
+        paddingLeft={1}
+        paddingRight={1}
+        flexDirection="column"
+      >
+        <text fg={c.accent} height={1} flexShrink={0}>
+          <b>Reload configuration?</b>
+        </text>
+        <scrollbox flexGrow={1} minHeight={1}>
+          <text fg={c.text}>
+            Reload discards unsaved form edits and uses crew.toml.
+          </text>
+          <text fg={c.muted}>Services removed from the file will stop.</text>
+          {reloadError ? <text fg={c.danger}>{reloadError}</text> : null}
+        </scrollbox>
+        <box flexDirection="row" gap={1} height={1} flexShrink={0}>
+          <Button
+            label={busy ? "Reloading…" : "Reload and discard"}
+            danger
+            disabled={busy}
+            onPress={() => {
+              setBusy(true);
+              setReloadError("");
+              void onReload?.()
+                .then(() => {
+                  setConfirmReload(false);
+                  setConflict(false);
+                  setError("");
+                })
+                .catch((e) => {
+                  const message = e instanceof Error ? e.message : String(e);
+                  setReloadError(message);
+                  setError(message);
+                })
+                .finally(() => setBusy(false));
+            }}
+          />
+          <Button
+            id="service-keep-editing"
+            label="Keep editing"
+            disabled={busy}
+            onPress={keepEditing}
+          />
+        </box>
+      </box>
+    );
   return (
     <box
       width="100%"
@@ -185,7 +267,7 @@ export function ServiceEditor({
             key={label}
             id={`field-row-${i}`}
             flexDirection="column"
-            height={3}
+            height={invalidField === i && error ? 5 : 3}
             flexShrink={0}
           >
             <text
@@ -219,6 +301,11 @@ export function ServiceEditor({
                 }
               />
             )}
+            {invalidField === i && error ? (
+              <text fg={c.danger} height={2} flexShrink={0}>
+                {error}
+              </text>
+            ) : null}
           </box>
         ))}
         <box
@@ -264,7 +351,7 @@ export function ServiceEditor({
           </scrollbox>
         ) : null}
       </scrollbox>
-      {error ? (
+      {error && invalidField === null ? (
         <text fg={c.danger} height={2} flexShrink={0}>
           {error}
         </text>
@@ -282,11 +369,14 @@ export function ServiceEditor({
           onPress={onCancel}
           disabled={busy}
         />
-        {onReload ? (
+        {onReload && conflict ? (
           <Button
             id="service-reload"
             label="Reload file"
-            onPress={() => void onReload().catch((e) => setError(String(e)))}
+            onPress={() => {
+              setReloadError("");
+              setConfirmReload(true);
+            }}
             disabled={busy}
           />
         ) : null}

@@ -2,7 +2,12 @@ import { test, expect } from "bun:test";
 import { mkdtemp, rm, stat, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { extractUrls, exportLogs, describeService } from "./diagnostics";
+import {
+  extractUrls,
+  exportLogs,
+  describeService,
+  describeServiceSections,
+} from "./diagnostics";
 test("URLs are deduplicated, normalized and limited to safe HTTP(S) destinations", () => {
   expect(
     extractUrls(
@@ -46,4 +51,44 @@ test("log export is private, unique, readable and includes exit diagnostics", as
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("diagnostic UI groups information and labels local timestamps while exports retain ISO", () => {
+  const service = {
+    id: "api",
+    repo: "product",
+    cwd: "/tmp",
+    command: "bun run dev",
+    autostart: false,
+  };
+  const startedAt = Date.parse("2026-11-07T20:30:00Z");
+  const snapshot = {
+    id: "api",
+    state: "running" as const,
+    pid: 123,
+    generation: 1,
+    exitCode: null,
+    error: null,
+    startedAt,
+  };
+  const sections = describeServiceSections(
+    service,
+    snapshot,
+    startedAt + 1500,
+    "America/Lima",
+  );
+  expect(sections.map((section) => section.title)).toEqual([
+    "Overview",
+    "Process · America/Lima",
+    "Configuration",
+    "Output",
+  ]);
+  const text = sections.flatMap((section) => section.lines).join("\n");
+  expect(text).toContain("Service: api");
+  expect(text).toContain("3:30:00 PM");
+  expect(text).toContain("Duration: 1.5s");
+  expect(text).not.toContain("20:30:00.000Z");
+  expect(describeService(service, snapshot, startedAt + 1500)).toContain(
+    "2026-11-07T20:30:00.000Z",
+  );
 });

@@ -296,7 +296,7 @@ try {
   await until(
     () =>
       frame().includes("Create your workspace") &&
-      frame().includes("Save & start"),
+      frame().includes("Create workspace"),
     "Native first-run wizard",
   );
   click("Add service");

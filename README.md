@@ -123,6 +123,8 @@ Version 0.2.1 provides standalone executables and an npm launcher requiring Node
 
 Built with TypeScript, Bun, OpenTUI, and React. See [Contributing](CONTRIBUTING.md) for setup and checks, and [Verification](docs/verification.md) for coverage and platform limits.
 
+From a source checkout, `bun run --no-env-file preview` starts a local xterm.js development preview at the URL printed in your terminal. See [Browser terminal preview](CONTRIBUTING.md#browser-terminal-preview) for usage.
+
 ## License
 
 [MIT](LICENSE).

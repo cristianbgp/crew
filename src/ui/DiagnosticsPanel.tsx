@@ -8,19 +8,22 @@ import type { ScrollBoxRenderable } from "@opentui/core";
 import { Button } from "./Button";
 import { menuKey, useInitialFocus } from "./focus";
 import { useTheme } from "./theme";
+import type { DiagnosticSection } from "../process/diagnostics";
 export function DiagnosticsPanel({
   title = "Diagnostics",
-  text,
+  text = "",
+  sections = [],
   onExport,
   onClose,
 }: {
   title?: string;
-  text: string;
+  text?: string;
+  sections?: DiagnosticSection[];
   onExport?: () => Promise<string>;
   onClose: () => void;
 }) {
   const c = useTheme();
-  const { height } = useTerminalDimensions();
+  const { height, width } = useTerminalDimensions();
   const renderer = useRenderer();
   const list = useRef<ScrollBoxRenderable | null>(null);
   const [message, setMessage] = useState("");
@@ -70,9 +73,26 @@ export function DiagnosticsPanel({
           <b>{title}</b>
         </text>
         <scrollbox ref={list} flexGrow={1} minHeight={1}>
-          <text fg={c.text} selectable>
-            {text}
-          </text>
+          {text ? (
+            <text fg={sections.length ? c.yellow : c.text} selectable>
+              {text}
+            </text>
+          ) : null}
+          {sections.map((section, index) => (
+            <box
+              key={section.title}
+              flexDirection="column"
+              flexShrink={0}
+              marginTop={index ? 1 : 0}
+            >
+              <text fg={c.accent} height={1} wrapMode="none" truncate>
+                <b>{section.title}</b>
+              </text>
+              <text fg={c.text} selectable>
+                {section.lines.join("\n")}
+              </text>
+            </box>
+          ))}
           {message ? (
             <text fg={c.yellow} selectable>
               {message}
@@ -99,6 +119,16 @@ export function DiagnosticsPanel({
             />
           ) : null}
           <Button quiet label="Close · Esc" onPress={onClose} />
+          <text
+            fg={c.muted}
+            height={1}
+            flexGrow={1}
+            minWidth={0}
+            wrapMode="none"
+            truncate
+          >
+            {width >= 72 ? "↑↓ / PgUp / PgDn scroll" : "↑↓"}
+          </text>
         </box>
       </box>
     </box>

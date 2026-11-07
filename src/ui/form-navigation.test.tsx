@@ -104,7 +104,7 @@ test("empty setup name validation returns focus to the workspace field", async (
       t.mockInput.pressKey("a", { ctrl: true });
       t.mockInput.pressBackspace();
     });
-    await clickText(t, "Save & start");
+    await clickText(t, "Create workspace");
     expect(t.captureCharFrame()).toContain("Choose a workspace name");
     expect(t.renderer.currentFocusedRenderable?.id).toBe("workspace-name");
   } finally {

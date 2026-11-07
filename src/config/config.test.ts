@@ -9,7 +9,12 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadConfig, createConfig, saveConfig } from "./store";
+import {
+  loadConfig,
+  createConfig,
+  saveConfig,
+  ConfigConflictError,
+} from "./store";
 import { parseConfig } from "./parse";
 async function fixture(fn: (dir: string, path: string) => Promise<void>) {
   const dir = await mkdtemp(join(tmpdir(), "crew-config-"));
@@ -87,6 +92,9 @@ test("add/remove round trip and conflicts leave external content untouched", () 
     await expect(
       saveConfig(d, { type: "remove", serviceId: "api" }),
     ).rejects.toThrow("changed");
+    await expect(
+      saveConfig(d, { type: "remove", serviceId: "api" }),
+    ).rejects.toBeInstanceOf(ConfigConflictError);
     expect(await readFile(path, "utf8")).toBe(external);
     d = (await loadConfig(path))!;
     d = await saveConfig(d, { type: "remove", serviceId: "api" });

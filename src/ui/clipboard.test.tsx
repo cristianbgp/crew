@@ -30,6 +30,9 @@ test("mouse Copy sends only selected text to the clipboard and removes the typin
     { width: 100, height: 26 },
   );
   try {
+    await act(async () => {
+      await m.start("web");
+    });
     await t.renderOnce();
     const term = t.renderer.root.findDescendantById(
       "terminal-web",

@@ -20,7 +20,7 @@ test("setup presents explicit save and cancellation controls without executing a
     const frame = t.captureCharFrame();
     expect(frame).toContain("Create your workspace");
     expect(frame).toContain("Add service");
-    expect(frame).toContain("Save & start");
+    expect(frame).toContain("Create workspace");
     const lines = frame.split("\n");
     const y = lines.findIndex((l) => l.includes("Cancel"));
     await act(async () => {
@@ -49,7 +49,7 @@ test("first-run actions remain accessible at 65 by 15 and Escape cancels", async
   );
   try {
     await t.renderOnce();
-    expect(t.captureCharFrame()).toContain("Save & start");
+    expect(t.captureCharFrame()).toContain("Create workspace");
     expect(t.captureCharFrame()).toContain("Cancel");
     await act(async () => {
       t.mockInput.pressEscape();

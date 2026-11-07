@@ -3,6 +3,8 @@ import { useTerminalDimensions } from "@opentui/react";
 import type { ServiceDefinition } from "../config/types";
 import { Button } from "./Button";
 import { useTheme } from "./theme";
+import { useEffect, useRef, useState } from "react";
+import type { ScrollBoxRenderable } from "@opentui/core";
 
 export function ServiceActions({
   service,
@@ -30,6 +32,16 @@ export function ServiceActions({
   const c = useTheme();
   useInitialFocus("crew-service-actions");
   const { height } = useTerminalDimensions();
+  const [details, setDetails] = useState(false);
+  const list = useRef<ScrollBoxRenderable | null>(null);
+  useEffect(() => {
+    if (!details) return;
+    const timer = setTimeout(
+      () => list.current?.scrollChildIntoView("service-action-details"),
+      0,
+    );
+    return () => clearTimeout(timer);
+  }, [details, height]);
   return (
     <box
       position="absolute"
@@ -56,38 +68,57 @@ export function ServiceActions({
         <text fg={c.accent} flexShrink={0} height={1} wrapMode="none" truncate>
           <b>Service actions</b> · {service.id}
         </text>
-        <scrollbox flexGrow={1} minHeight={0}>
-          <text fg={c.muted}>{service.repo}</text>
-          <text fg={c.text}>{service.command}</text>
-          <text fg={c.muted}>{service.cwd}</text>
+        <scrollbox ref={list} flexGrow={1} minHeight={1}>
           {pending ? (
             <text fg={c.yellow}>Changes saved · restart to apply</text>
           ) : null}
-        </scrollbox>
-        <box height={1} flexShrink={0}>
-          <Button
-            label={busy ? "Working…" : "Restart"}
-            disabled={busy}
-            onPress={onRestart}
-          />
-        </box>
-        <box height={1} flexShrink={0}>
-          <Button label="Edit" onPress={onEdit} />
-        </box>
-        <box height={1} flexShrink={0}>
-          <Button label="Remove" danger onPress={onRemove} />
-        </box>
-        <box height={1} flexShrink={0}>
-          <Button label="+ Add service" onPress={onAdd} />
-        </box>
-        <box height={1} flexShrink={0} flexDirection="row" gap={1}>
-          {onCommands ? (
-            <Button quiet label="Commands Ctrl+K" onPress={onCommands} />
-          ) : null}
+          <box height={1} flexShrink={0}>
+            <Button
+              label={busy ? "Working…" : "Restart"}
+              disabled={busy}
+              onPress={onRestart}
+            />
+          </box>
+          <box height={1} flexShrink={0}>
+            <Button label="Edit service" onPress={onEdit} />
+          </box>
           {onDiagnostics ? (
-            <Button quiet label="Diagnostics" onPress={onDiagnostics} />
+            <box height={1} flexShrink={0}>
+              <Button secondary label="Diagnostics" onPress={onDiagnostics} />
+            </box>
           ) : null}
-        </box>
+          {onCommands ? (
+            <box height={1} flexShrink={0}>
+              <Button secondary label="Commands Ctrl+K" onPress={onCommands} />
+            </box>
+          ) : null}
+          <box height={1} flexShrink={0}>
+            <Button secondary label="+ Add service" onPress={onAdd} />
+          </box>
+          <box height={1} flexShrink={0}>
+            <Button
+              secondary
+              label={details ? "Hide details" : "Command & directory"}
+              onPress={() => setDetails(!details)}
+            />
+          </box>
+          {details ? (
+            <box
+              id="service-action-details"
+              flexDirection="column"
+              flexShrink={0}
+            >
+              <text fg={c.muted}>Group: {service.repo}</text>
+              <text fg={c.accent}>Command</text>
+              <text fg={c.text}>{service.command}</text>
+              <text fg={c.accent}>Directory</text>
+              <text fg={c.muted}>{service.cwd}</text>
+            </box>
+          ) : null}
+          <box height={1} flexShrink={0}>
+            <Button label="Remove service…" danger quiet onPress={onRemove} />
+          </box>
+        </scrollbox>
         <box height={1} flexShrink={0}>
           <Button label="Close · Esc" onPress={onClose} />
         </box>

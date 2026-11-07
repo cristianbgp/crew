@@ -11,6 +11,12 @@ import {
   type ConfigMutation,
 } from "./document";
 export type { ConfigDocument, ConfigMutation } from "./document";
+export class ConfigConflictError extends Error {
+  constructor() {
+    super("crew.toml changed outside crew. Reload before saving.");
+    this.name = "ConfigConflictError";
+  }
+}
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 export async function loadConfig(path: string): Promise<ConfigDocument | null> {
   path = resolve(path);
@@ -56,8 +62,7 @@ export async function saveConfig(
   const temp = path + `.${randomUUID()}.tmp`;
   try {
     const current = await readFile(path, "utf8");
-    if (hash(current) !== doc.hash)
-      throw new Error("crew.toml changed outside crew. Reload before saving.");
+    if (hash(current) !== doc.hash) throw new ConfigConflictError();
     const info = await stat(path);
     if (!(info.mode & 0o222)) throw new Error("crew.toml is read-only");
     const text = mutateDocument(doc, mutation);
@@ -70,7 +75,7 @@ export async function saveConfig(
       await fd.close();
     }
     if (hash(await readFile(path, "utf8")) !== doc.hash)
-      throw new Error("crew.toml changed outside crew. Reload before saving.");
+      throw new ConfigConflictError();
     await rename(temp, path);
     return { config, text, path, hash: hash(text) };
   } finally {
