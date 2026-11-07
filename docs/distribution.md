@@ -57,7 +57,7 @@ Contributors need Bun 1.4.0 and Node.js 22+. See [Contributing](../CONTRIBUTING.
 bun install --frozen-lockfile
 bun run --no-env-file build
 bun run --no-env-file package --host-only
-bun run test:npm
+bun run test:npm --tarballs dist/tarballs
 ```
 
 `dist/npm/` holds staged manifests; `dist/tarballs/` holds packages. The source manifest deliberately has no unpublished platform optional dependencies. **Do not publish a tarball packed from the source root.** Staging adds four exact optional versions to the lightweight root launcher. Each native package contains its executable and licenses.
@@ -66,7 +66,7 @@ Darwin builds run on macOS so the final executable can be signed and verified. E
 
 ## CI and release checks
 
-Normal PRs and pushes to `main` run two jobs: the source checks/terminal suite on Linux, then a macOS ARM64 native smoke test. Feature branches with a PR do not also run duplicate push jobs. Formatting, lint and typechecking run once.
+Normal PRs and pushes to `main` run one Linux job: formatting, lint, typechecking, source tests and terminal smoke. Native runners run only for a manually requested full release. Feature branches with a PR do not also run duplicate push jobs.
 
 Before publishing, request the full release matrix from the same workflow:
 
@@ -74,7 +74,7 @@ Before publishing, request the full release matrix from the same workflow:
 gh workflow run ci.yml --ref main -f full_release=true
 ```
 
-That run performs the source checks once and builds/tests all four native targets. Each target verifies standalone behavior, service environments, compiled terminal interactions and npm installation. The smoke-only job is skipped. The four jobs upload their tested binary, tarballs, licenses and checksum evidence; ordinary PR CI uploads no release artifacts.
+That run performs the source checks once and builds/tests all four native targets. Each target verifies standalone behavior, native and bunx service environments, compiled terminal interactions and npm installation. It builds and packages once; npm acceptance uses the exact tarballs later uploaded with the binary, licenses and checksum evidence. Ordinary PR CI uploads no release artifacts.
 
 ## Publish a release
 

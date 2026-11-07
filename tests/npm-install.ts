@@ -19,6 +19,12 @@ import { createConfig } from "../src/config/store";
 import { startPackageRegistry, type FixtureManifest } from "./package-registry";
 import { alive } from "./helpers";
 
+const [flag, preparedDirectory, ...extra] = process.argv.slice(2);
+if (
+  flag !== undefined &&
+  (flag !== "--tarballs" || !preparedDirectory || extra.length)
+)
+  throw new Error("Usage: bun tests/npm-install.ts [--tarballs <directory>]");
 const host = hostPlatform();
 const root = await mkdtemp(join(tmpdir(), "crew npm é "));
 const checks: string[] = [];
@@ -59,19 +65,52 @@ try {
     NPM_CONFIG_GLOBAL: "false",
     XDG_STATE_HOME: join(root, "state"),
   };
-  const binaries = join(root, "binaries"),
-    stage = join(root, "staged"),
-    tarballs = join(root, "tarballs");
-  await buildBinary(host.id, binaries);
-  await stagePackages(binaries, stage, { hostOnly: true });
-  const rootManifest = JSON.parse(
-    await readFile(join(stage, "root/package.json"), "utf8"),
-  );
-  const hostManifest = JSON.parse(
-    await readFile(join(stage, host.id, "package.json"), "utf8"),
-  );
-  const rootTarball = await packDirectory(join(stage, "root"), tarballs),
+  let rootTarball: string, hostTarball: string;
+  if (preparedDirectory) {
+    const tarballs = resolve(preparedDirectory);
+    rootTarball = join(tarballs, `cristianbgp-crew-${version}.tgz`);
+    hostTarball = join(tarballs, `cristianbgp-crew-${host.id}-${version}.tgz`);
+    console.log(`Using prepared npm tarballs: ${tarballs}`);
+  } else {
+    const binaries = join(root, "binaries"),
+      stage = join(root, "staged"),
+      tarballs = join(root, "tarballs");
+    await buildBinary(host.id, binaries);
+    await stagePackages(binaries, stage, { hostOnly: true });
+    rootTarball = await packDirectory(join(stage, "root"), tarballs);
     hostTarball = await packDirectory(join(stage, host.id), tarballs);
+  }
+  async function packageManifest(path: string) {
+    try {
+      const files = await new Bun.Archive(await readFile(path)).files();
+      const manifest = files.get("package/package.json");
+      if (!manifest) throw new Error("Missing package/package.json");
+      return JSON.parse(await manifest.text());
+    } catch (error) {
+      throw new Error(`Prepared npm tarball is invalid: ${path}`, {
+        cause: error,
+      });
+    }
+  }
+  const rootManifest = await packageManifest(rootTarball);
+  const hostManifest = await packageManifest(hostTarball);
+  const dependencies = rootManifest?.optionalDependencies;
+  if (
+    rootManifest?.name !== "@cristianbgp/crew" ||
+    rootManifest?.version !== version ||
+    !dependencies ||
+    typeof dependencies !== "object" ||
+    Array.isArray(dependencies) ||
+    Object.keys(dependencies).length !== platforms.length ||
+    platforms.some((p) => dependencies[p.packageName] !== version) ||
+    hostManifest?.name !== host.packageName ||
+    hostManifest?.version !== version ||
+    JSON.stringify(hostManifest?.os) !== JSON.stringify([host.os]) ||
+    JSON.stringify(hostManifest?.cpu) !== JSON.stringify([host.cpu])
+  )
+    throw new Error(
+      `Prepared npm package metadata does not match ${version} (${host.id})`,
+    );
   const manifests: FixtureManifest[] = [
     rootManifest,
     ...platforms.map((p) =>

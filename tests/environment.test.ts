@@ -18,7 +18,9 @@ const cli = resolve(process.env.CREW_TEST_EXECUTABLE || "src/entry.ts");
 const sourceEntry = resolve(
   process.env.CREW_TEST_SOURCE_ENTRY || "src/entry.ts",
 );
-const launches = ["executable", "bunx", "source"] as const;
+const launches = process.env.CREW_TEST_EXECUTABLE
+  ? (["executable", "bunx"] as const)
+  : (["executable", "bunx", "source"] as const);
 
 for (const launch of launches) {
   for (const exported of [false, true]) {

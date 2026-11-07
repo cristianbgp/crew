@@ -49,7 +49,7 @@ bun run test:soak
 SOAK_SECONDS=7200 SOAK_SERVICES=12 bun run test:soak
 ```
 
-Report the duration actually tested; the default soak is 60 seconds. Routine GitHub Actions runs source checks and terminal smoke once on Linux, plus one macOS ARM64 native smoke test. A manual full-release run adds compiled terminal, clean-PATH native, environment and npm-install checks on all four native targets. A passing run does not establish compatibility with every OS version or terminal host.
+Report the duration actually tested; the default soak is 60 seconds. Routine GitHub Actions uses one Linux job for source checks and terminal smoke. Native builds and package checks run only when manually preparing a release, on all four supported targets. A passing run does not establish compatibility with every OS version or terminal host.
 
 ## Project layout
 
@@ -71,7 +71,7 @@ See [Configuration and usage](docs/configuration.md) for user behavior and [Dist
 ```sh
 bun run --no-env-file build
 bun run --no-env-file package --host-only
-bun run test:npm
+bun run test:npm --tarballs dist/tarballs
 ```
 
-The release root package and its exact platform optional dependencies are generated under `dist/npm/`. Publish reviewed staged tarballs, not `bun pm pack` from the source root. The source manifest deliberately does not depend on unpublished platform packages. Third-party license files under `licenses/` are preserved verbatim.
+The release root package and its exact platform optional dependencies are generated under `dist/npm/`. The `--tarballs` option tests those exact packaged files without rebuilding or repacking; missing or mismatched inputs fail. Running `bun run test:npm` without that option builds disposable packages for a standalone local check. Publish reviewed staged tarballs, not `bun pm pack` from the source root. The source manifest deliberately does not depend on unpublished platform packages. Third-party license files under `licenses/` are preserved verbatim.

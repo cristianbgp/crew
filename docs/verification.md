@@ -4,7 +4,7 @@
 
 The 0.2.2 candidate uses Bun 1.4.0 for builds and source development, and Node 22+ for the npm launcher. Direct executables embed their runtime. OpenTUI provides the embedded terminal; `@xterm/headless` independently observes it in development tests.
 
-Routine CI runs the source suite once on Ubuntu 24.04 and native smoke on macOS 15 ARM64. The manually requested full-release matrix additionally runs macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
+Routine CI runs one Ubuntu 24.04 job for source checks and terminal smoke. The manually requested full-release matrix adds macOS 15 ARM64, macOS 15 Intel, Ubuntu 24.04 ARM64 and Ubuntu 24.04 x64. Release acceptance requires all four native jobs and the checks job to pass for one commit. The platform JSON records the source commit, workflow run ID and checksums; a local build alone establishes only local evidence.
 
 Windows, Alpine/musl, older OS/glibc releases, every terminal emulator and remote clipboard behavior are not established by this matrix. A terminal protocol check does not establish a manual visual review in Warp.
 
@@ -54,12 +54,13 @@ bun run --no-env-file build
 bun run test:standalone --binary "$PWD/dist/darwin-arm64/crew"
 CREW_TEST_EXECUTABLE="$PWD/dist/darwin-arm64/crew" bun test tests/environment.test.ts
 CREW_TEST_EXECUTABLE="$PWD/dist/darwin-arm64/crew" bun run test:terminal
-bun run test:npm
+bun run --no-env-file package --host-only
+bun run test:npm --tarballs dist/tarballs
 ```
 
 A dependency audit checks known registry advisories, not every possible vulnerability. Replace `darwin-arm64` with the actual host target. The standalone harness copies the executable outside the checkout, removes runtimes from PATH, and checks the demo, setup, input, restart, readiness failure, malformed config and descendant cleanup under quit/signals. Compiled terminal smoke adds resize, appearance changes, editing and title restoration.
 
-The npm harness installs actual tarballs by name from an isolated local registry using real npm and Node, without Bun on PATH. It checks local devDependency scripts, global-prefix installation, signals, paths with spaces, missing optional packages and macOS executable signatures. It does not publish to npm or change global installations. Release tests use a fake registry adapter to verify partial failures, integrity conflicts, matching-version retries and stopping immediately when npm is still processing a native package. See [Distribution](distribution.md) for the full release gate.
+The npm harness installs actual tarballs by name from an isolated local registry using real npm and Node, without Bun on PATH. With `--tarballs`, it validates and consumes the prepared archives without rebuilding or modifying them; CI tests the same files it uploads. Without that option it builds disposable packages for local verification. It checks local devDependency scripts, global-prefix installation, signals, paths with spaces, missing optional packages and macOS executable signatures. Native environment checks cover direct and bunx launches; the source launch is already covered by the source suite. It does not publish to npm or change global installations. Release tests use a fake registry adapter to verify partial failures, integrity conflicts, matching-version retries and stopping immediately when npm is still processing a native package. See [Distribution](distribution.md) for the full release gate.
 
 ## Initial published preview — 2026-10-20
 
@@ -74,4 +75,4 @@ The scoped package and frozen lockfile are synchronized. The release check passe
 
 These checks ran from a separate working directory without importing the source checkout. The release contains 55 files, including runtime source, JSX configuration, public docs, MIT license, demo assets and the screenshot. Test suites, local evidence, credentials files and handoff notes are excluded from the npm artifact. The repository retains the tests and `bun.lock` for contributors.
 
-The macOS GitHub Actions workflow runs frozen installation, source checks, real terminal verification, and package preview. See the repository’s Actions page for hosted results. Local logs and captures remain under ignored `work/`.
+See the repository’s Actions page for hosted results and the current CI coverage described above. Local logs and captures remain under ignored `work/`.

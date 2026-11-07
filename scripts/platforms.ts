@@ -4,7 +4,6 @@ export const platforms = [
     os: "darwin",
     cpu: "arm64",
     target: "bun-darwin-arm64",
-    runner: "macos-15",
     packageName: "@cristianbgp/crew-darwin-arm64",
   },
   {
@@ -12,7 +11,6 @@ export const platforms = [
     os: "darwin",
     cpu: "x64",
     target: "bun-darwin-x64",
-    runner: "macos-15-intel",
     packageName: "@cristianbgp/crew-darwin-x64",
   },
   {
@@ -20,7 +18,6 @@ export const platforms = [
     os: "linux",
     cpu: "arm64",
     target: "bun-linux-arm64",
-    runner: "ubuntu-24.04-arm",
     packageName: "@cristianbgp/crew-linux-arm64",
   },
   {
@@ -28,7 +25,6 @@ export const platforms = [
     os: "linux",
     cpu: "x64",
     target: "bun-linux-x64",
-    runner: "ubuntu-24.04",
     packageName: "@cristianbgp/crew-linux-x64",
   },
 ] as const;

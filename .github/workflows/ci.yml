@@ -37,23 +37,6 @@ jobs:
       - run: bun run check
       - run: bun run test:terminal
 
-  smoke:
-    name: native smoke (macOS ARM64)
-    needs: checks
-    if: ${{ !inputs.full_release }}
-    runs-on: macos-15
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-      - run: bun install --frozen-lockfile
-      - run: bun run build darwin-arm64
-      - run: bun run test:standalone --binary "$PWD/dist/darwin-arm64/crew"
-
   native:
     name: native (${{ matrix.target }})
     needs: checks
@@ -90,8 +73,8 @@ jobs:
       - run: bun run test:standalone --binary "$PWD/dist/$CREW_TARGET/crew"
       - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun test tests/environment.test.ts
       - run: CREW_TEST_EXECUTABLE="$PWD/dist/$CREW_TARGET/crew" bun run test:terminal
-      - run: bun run test:npm
       - run: bun run package --host-only
+      - run: bun run test:npm --tarballs dist/tarballs
       - run: bun --no-env-file scripts/verify-target.ts "$CREW_TARGET" --write-evidence
       - uses: actions/upload-artifact@v7
         with:
